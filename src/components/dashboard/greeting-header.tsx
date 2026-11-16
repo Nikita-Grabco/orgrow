@@ -4,10 +4,12 @@ import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { useToday } from "@/hooks/use-today";
 import { formatLongDate, getGreeting } from "@/lib/dates";
+import { useAuth } from "@/store/auth-store";
 import { usePlanner } from "@/store/planner-store";
 
 export function GreetingHeader() {
-  const { user, openAddTask } = usePlanner();
+  const { openAddTask } = usePlanner();
+  const { displayName } = useAuth();
   const today = useToday();
 
   return (
@@ -16,7 +18,7 @@ export function GreetingHeader() {
       title={
         <>
           {today ? getGreeting(today.getHours()) : "Hola"},{" "}
-          <em className="not-italic text-primary">{user.name}</em>
+          <em className="not-italic text-primary">{displayName}</em>
         </>
       }
       description="Esto es lo que tienes por delante hoy."

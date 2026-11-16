@@ -3,8 +3,8 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-16 (Parte 1 completada)
-Commit de referencia: `75172e7` (feat(tareas): CRUD completo con fechas reales y persistencia)
+Última actualización: 2026-11-16 (Parte 2 completada)
+Commit de referencia: `44fba8e` (feat(backend): conectar cliente de Supabase — parte 1)
 Rama: `main`
 
 ---
@@ -92,12 +92,14 @@ dia-en-orden/
 ├── public/                    ← favicon, robots.txt
 └── src/
     ├── routes/                ← páginas (routeTree.gen.ts es AUTOGENERADO)
-    │   ├── __root.tsx         ← layout, providers, 404, error boundary
+    │   ├── __root.tsx         ← providers (Query + Auth), AuthGate, 404, error boundary
     │   ├── index.tsx          ← Dashboard (/)
+    │   ├── acceso.tsx         ← /acceso (login y registro)
     │   ├── tareas.tsx         ← /tareas
     │   ├── agenda.tsx         ← /agenda
     │   └── notas.tsx          ← /notas
     ├── components/
+    │   ├── auth/              ← AuthGate, SignOutButton
     │   ├── ui/                ← kit shadcn (no editar salvo necesidad)
     │   ├── layout/            ← sidebar, nav móvil, AppShell, avatar
     │   ├── dashboard/         ← resumen del día, próximas, notas rápidas
@@ -108,9 +110,9 @@ dia-en-orden/
     ├── config/                ← categorías, prioridades, tipos de nota, navegación
     ├── data/                  ← sample-data.ts (semilla del primer arranque)
     ├── hooks/                 ← useToday, useMobile
-    ├── lib/                   ← dates.ts, planner.ts, utils.ts, errores
-    ├── services/              ← planner-storage, tasks-repository, notes-repository, supabase-client
-    ├── store/                 ← planner-store.tsx
+    ├── lib/                   ← dates.ts, planner.ts, user.ts, utils.ts, errores
+    ├── services/              ← planner-storage, tasks-repository, notes-repository, supabase-client, auth-errors
+    ├── store/                 ← planner-store.tsx, auth-store.tsx
     ├── test/                  ← setup + tests
     ├── types/                 ← planner.ts (tipos del dominio)
     ├── env.d.ts               ← tipos de las variables VITE_*
@@ -162,6 +164,24 @@ Reglas de arquitectura:
 - Actualización optimista con rollback y aviso si el guardado falla.
 - Datos corruptos → se ignoran y se vuelve a sembrar (nunca rompe la UI).
 
+### Autenticación (Parte 2)
+
+- Login por **email + contraseña** en `/acceso`, con dos modos en la misma pantalla
+  (Entrar / Crear cuenta). Se eligió contraseña en lugar de enlace mágico porque en
+  iPhone el enlace se abriría en Safari y la sesión **no se compartiría con la app
+  instalada** en la pantalla de inicio.
+- `AuthProvider` (`src/store/auth-store.tsx`) expone `status`, `user`, `email`,
+  `displayName`, `initials`, `signIn`, `signUp` y `signOut`.
+- `AuthGate` (`src/components/auth/auth-gate.tsx`) decide qué se renderiza:
+  splash → `/acceso` → app con `AppShell`. Las rutas privadas redirigen y `/acceso`
+  expulsa a quien ya tiene sesión.
+- Los errores de Supabase se traducen al español en `src/services/auth-errors.ts`
+  (nunca se muestra el mensaje interno).
+- Nombre e iniciales salen del email (`src/lib/user.ts`) mientras no exista
+  `profiles` (Parte 3). `sampleUser` ("Nikita/NG") eliminado.
+- Cerrar sesión disponible en la barra lateral (escritorio/tablet) y en la cabecera
+  móvil.
+
 ### Backend (Parte 1)
 
 - Cliente único de Supabase en `src/services/supabase-client.ts`, creado de forma
@@ -173,11 +193,14 @@ Reglas de arquitectura:
 - Tipado de `import.meta.env` en `src/env.d.ts`.
 
 ### Calidad
-- 25 tests en 6 archivos (fechas, agrupación, repositorios, store/persistencia, rutas,
-  configuración de Supabase).
+- 34 tests en 7 archivos (fechas, agrupación, repositorios, store/persistencia, rutas,
+  configuración de Supabase, autenticación).
 - `npm run build` y `npx tsc --noEmit` en verde.
-- SSR verificado: `/`, `/tareas`, `/agenda`, `/notas` responden 200.
-- Conexión comprobada contra el proyecto real: `/auth/v1/health` responde 200.
+- SSR verificado: `/` y `/tareas` sirven el splash, `/acceso` sirve el formulario;
+  todos responden 200.
+- Conexión comprobada contra el proyecto real: `/auth/v1/health` 200 y
+  `/auth/v1/settings` confirma `email: true` (proveedor activo) y
+  `mailer_autoconfirm: false` (hace falta confirmar el email).
 
 ---
 
@@ -188,26 +211,27 @@ _(Ver el plan de 11 partes acordado con el usuario.)_
 ✅ **Parte 1 — Backend: completada.** Proyecto Supabase propio, `.env.local` +
 `.env.example`, `@supabase/supabase-js` y cliente único validado.
 
-Las siguientes partes del plan ya están cubiertas en "implementado" donde aplica:
+✅ **Parte 2 — Autenticación: completada.** `/acceso`, sesión persistente, rutas
+privadas y perfil derivado del email (la tabla `profiles` llega en la Parte 3).
 
-1. **Parte 2 — Autenticación:** login (un solo usuario real, pero con auth),
-   sesión persistente, rutas protegidas, perfil real (hoy `sampleUser` = "Nikita").
-2. **Parte 3 — Esquema y RLS:** tablas `profiles`, `tasks`, `notes`, `activities`,
+Las siguientes partes:
+
+1. **Parte 3 — Esquema y RLS:** tablas `profiles`, `tasks`, `notes`, `activities`,
    índices y políticas por usuario.
-3. **Parte 4 — Tareas en servidor:** repositorio Supabase, TanStack Query, importación
+2. **Parte 4 — Tareas en servidor:** repositorio Supabase, TanStack Query, importación
    de los datos locales, sincronización entre dispositivos.
-4. **Parte 5 — Notas:** editar, buscar, filtros y persistencia en servidor.
-5. **Parte 6 — Agenda real:** CRUD de actividades, fechas/horas reales, navegación
+3. **Parte 5 — Notas:** editar, buscar, filtros y persistencia en servidor.
+4. **Parte 6 — Agenda real:** CRUD de actividades, fechas/horas reales, navegación
    entre semanas (hoy son de solo lectura con `dayOffset`).
-6. **Parte 7 — PWA:** instalable, service worker, offline y cola de escrituras.
-7. **Parte 8 — Recordatorios:** hora de aviso, Web Push y función programada
+5. **Parte 7 — PWA:** instalable, service worker, offline y cola de escrituras.
+6. **Parte 8 — Recordatorios:** hora de aviso, Web Push y función programada
    (iOS requiere PWA instalada; valorar Capacitor más adelante).
-8. **Parte 9 — Ajustes:** perfil, zona horaria, exportar/importar JSON, categorías
+7. **Parte 9 — Ajustes:** perfil, zona horaria, exportar/importar JSON, categorías
    propias, borrado de cuenta.
-9. **Parte 10 — Calidad/seguridad:** validación con `zod` en servidor, tests de RLS,
+8. **Parte 10 — Calidad/seguridad:** validación con `zod` en servidor, tests de RLS,
    rate limiting, E2E con Playwright, accesibilidad, lint normalizado.
-10. **Parte 11 — Producción:** dominio, entornos, backups, monitorización, CI/CD,
-    releases y posible envoltorio nativo.
+9. **Parte 11 — Producción:** dominio, entornos, backups, monitorización, CI/CD,
+   releases y posible envoltorio nativo.
 
 Extras no planificados aún: recurrencia de tareas, búsqueda global, estadísticas
 históricas, adjuntos.
@@ -233,6 +257,9 @@ históricas, adjuntos.
 | 2026-11 | Cliente de Supabase **perezoso** (no al importar el módulo) | SSR y build no tienen variables ni `localStorage`; así nada se rompe |
 | 2026-11 | Variable `VITE_SUPABASE_PUBLISHABLE_KEY` (no `ANON_KEY`) | Es la clave que emite Supabase hoy; el nombre evita confundirla con un secreto |
 | 2026-11 | `.gitignore` bloquea `.env` y `.env.*`, permite `.env.example` | Evitar filtrar claves por accidente |
+| 2026-11 | **Email + contraseña**, no enlace mágico | En iOS el enlace se abre en Safari y la sesión no se comparte con la app instalada; con contraseña se entra una vez dentro de la PWA |
+| 2026-11 | Puerta de autenticación en `__root.tsx` (`AuthGate`), no en cada ruta | Una sola regla para toda la app, sin repetir comprobaciones |
+| 2026-11 | Nombre e iniciales derivados del email hasta existir `profiles` | No inventar una tabla de perfil antes de la Parte 3 |
 
 ---
 
@@ -251,7 +278,10 @@ históricas, adjuntos.
 - Existe andamiaje de TanStack Start: `src/server.ts` (entrada SSR y errores),
   `src/start.ts` (middlewares de error y CSRF), `QueryClient` por petición en
   `src/router.tsx`. No hay endpoints ni *server functions* en uso.
-- ❌ Sin auth todavía (Parte 2) y sin consultas a datos (Parte 4).
+- ✅ **Parte 2 completada:** autenticación por email y contraseña, sesión persistente
+  en el dispositivo y rutas privadas (`AuthGate`).
+- ❌ Sin consultas a datos todavía: las tareas y notas siguen en `localStorage`
+  (Parte 4).
 
 ### Base de datos
 - ✅ Proyecto de Supabase creado (región UE) y accesible: el endpoint REST responde
@@ -265,7 +295,8 @@ históricas, adjuntos.
 
 ### Repositorio
 - `75172e7` — módulo de Tareas completo + `PROJECT_STATUS.md`.
-- Parte 1 (cliente de Supabase) commiteada a continuación.
+- `44fba8e` — Parte 1 (cliente de Supabase).
+- Parte 2 (autenticación) commiteada a continuación.
 
 ---
 
@@ -287,9 +318,17 @@ históricas, adjuntos.
 7. Avisos del build/lint a vigilar (no bloquean): `__dirname` en `vitest.config.ts`
    (Vite sugiere `import.meta.dirname`) y recomendación de usar `resolve.tsconfigPaths`
    nativo en lugar del plugin `vite-tsconfig-paths`.
-8. **Sin auth**: cualquiera con la URL ve la app (solo datos locales).
+8. ~~**Sin auth**~~ ✅ Resuelto en la Parte 2: sin sesión no se ve ningún dato.
 9. `localStorage` tiene ~5 MB y se borra si el usuario limpia el navegador.
-10. Avisos `react-refresh/only-export-components` (7, preexistentes) en componentes de `ui/` y en el store.
+10. Avisos `react-refresh/only-export-components` (7 preexistentes + `auth-store`) en componentes de `ui/` y en los stores.
+11. **El registro exige confirmar el email** (`mailer_autoconfirm: false`). Con el
+    SMTP por defecto de Supabase hay límites de envío (~3 correos/hora) y puede caer
+    en spam. Para el uso real conviene configurar SMTP propio (Parte 11) o desactivar
+    la confirmación en el panel si se prefiere entrar al instante.
+12. **Todavía no es instalable** como app: falta el manifest y el service worker
+    (Parte 7). "Añadir a pantalla de inicio" funciona, pero sin modo offline.
+13. Los datos siguen siendo **locales por navegador**: dos dispositivos con la misma
+    cuenta ven datos distintos hasta la Parte 4.
 
 ---
 
@@ -334,24 +373,23 @@ VITE_SUPABASE_PUBLISHABLE_KEY=
 
 ## 10. Siguiente paso exacto
 
-**Parte 2 — Autenticación y perfiles.**
+**Parte 3 — Esquema de datos y seguridad (RLS).**
 
-1. Activar el proveedor **Email** en Supabase (Authentication → Providers). Decidir
-   entre enlace mágico y contraseña (recomendado: enlace mágico, sin contraseñas que
-   gestionar). Opcional: Google.
-2. Crear la tabla `profiles` (id = `auth.users.id`, nombre, iniciales, timestamps) —
-   se hará junto con el esquema de la Parte 3 si conviene adelantarla.
-3. Añadir la capa de sesión en el cliente: `supabase.auth.getSession()`,
-   `onAuthStateChange` y un `AuthProvider` que exponga `user`, `isLoading`, `signIn`,
-   `signOut` a la UI.
-4. Pantalla de acceso con el lenguaje visual actual y **rutas protegidas** en
-   `__root.tsx` (redirección a `/acceso` sin sesión).
-5. Sustituir `sampleUser` ("Nikita/NG") por el perfil real en `UserAvatar` y saludo.
+1. Crear en el panel de Supabase (SQL Editor) las tablas `profiles`, `tasks`, `notes`
+   y `activities`, con `user_id uuid` → `auth.users(id)`, índices por `(user_id,
+   due_date)` y timestamps.
+2. Activar **RLS** en las cuatro y añadir políticas `select/insert/update/delete`
+   limitadas a `auth.uid() = user_id`.
+3. Trigger que crea la fila de `profiles` al registrarse, y `display_name` real en la
+   UI (`useAuth` pasa a leer el perfil).
+4. Capa de mapeo `snake_case` (BD) ↔ `camelCase` (TS) en un único módulo.
+5. Probar con SQL que un usuario no puede leer filas de otro (`set role authenticated`
+   + `request.jwt.claims`).
 
-**Criterio de terminado:** sin sesión no se ve ningún dato; con sesión, la app se ve
-exactamente igual que hoy y el perfil muestra el nombre real.
+**Criterio de terminado:** las tablas existen, RLS está activo y una consulta con la
+clave pública sin sesión devuelve 0 filas (no un error de permisos ni datos ajenos).
 
-Después de esta parte: **Parte 3 — Esquema y RLS**.
+Después de esta parte: **Parte 4 — Tareas en servidor**.
 
 ---
 
@@ -359,9 +397,9 @@ Después de esta parte: **Parte 3 — Esquema y RLS**.
 
 | Parte | Estado | Commit |
 |---|---|---|
-| 1 — Conexión del backend (Supabase) | ✅ completada | ver `git log` |
-| 2 — Autenticación y perfiles | ⏳ siguiente | — |
-| 3 — Esquema y RLS | ⏳ pendiente | — |
+| 1 — Conexión del backend (Supabase) | ✅ completada | `44fba8e` |
+| 2 — Autenticación y perfiles | ✅ completada | ver `git log` |
+| 3 — Esquema y RLS | ⏳ siguiente | — |
 | 4 — Tareas en servidor | ⏳ pendiente | — |
 | 5 — Notas completas | ⏳ pendiente | — |
 | 6 — Agenda real | ⏳ pendiente | — |

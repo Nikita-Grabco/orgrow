@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { TaskDialog } from "@/components/tasks/task-dialog";
 import { AppSidebar } from "./app-sidebar";
 import { Brand } from "./brand";
@@ -14,7 +15,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="md:pl-20 lg:pl-64">
         <header className="flex items-center justify-between px-5 pt-5 md:hidden">
           <Brand />
-          <UserAvatar />
+          <div className="flex items-center gap-0.5">
+            <UserAvatar />
+            <SignOutButton />
+          </div>
         </header>
         <main className="mx-auto w-full max-w-6xl px-5 pb-32 pt-6 sm:px-8 md:pb-12 md:pt-10 lg:px-12">
           {children}

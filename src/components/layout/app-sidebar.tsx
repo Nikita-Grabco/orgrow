@@ -1,15 +1,18 @@
 import { Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Button } from "@/components/ui/button";
 import { NAV_ITEMS } from "@/config/navigation";
+import { useAuth } from "@/store/auth-store";
 import { usePlanner } from "@/store/planner-store";
 import { Brand } from "./brand";
 import { UserAvatar } from "./user-avatar";
 
 /** Icon rail on tablet (md), full sidebar on desktop (lg+). Hidden on mobile. */
 export function AppSidebar() {
-  const { openAddTask, user } = usePlanner();
+  const { openAddTask } = usePlanner();
+  const { displayName } = useAuth();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-20 flex-col border-r border-sidebar-border bg-sidebar px-3 py-6 md:flex lg:w-64 lg:px-5">
@@ -42,10 +45,11 @@ export function AppSidebar() {
 
       <div className="mt-auto flex items-center justify-center gap-3 rounded-2xl lg:justify-start lg:border lg:border-sidebar-border lg:bg-card lg:p-3">
         <UserAvatar />
-        <div className="hidden min-w-0 lg:block">
-          <p className="truncate text-sm font-bold text-foreground">{user.name}</p>
+        <div className="hidden min-w-0 flex-1 lg:block">
+          <p className="truncate text-sm font-bold text-foreground">{displayName}</p>
           <p className="truncate text-xs text-muted-foreground">Organización personal</p>
         </div>
+        <SignOutButton />
       </div>
     </aside>
   );

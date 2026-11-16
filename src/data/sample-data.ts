@@ -1,10 +1,8 @@
-import type { Activity, Note, Task, UserProfile } from "@/types/planner";
+import type { Activity, Note, Task } from "@/types/planner";
 import type { CategoryId, Priority } from "@/types/planner";
 import { isoFromOffset } from "@/lib/dates";
 
 /** Example data for the first run. Replace with real data sources later. */
-
-export const sampleUser: UserProfile = { name: "Nikita", initials: "NG" };
 
 interface TaskSeed {
   title: string;

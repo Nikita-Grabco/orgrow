@@ -11,9 +11,9 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { AppShell } from "../components/layout/app-shell";
+import { AuthGate } from "../components/auth/auth-gate";
 import { Toaster } from "../components/ui/sonner";
-import { PlannerProvider } from "../store/planner-store";
+import { AuthProvider } from "../store/auth-store";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -130,13 +130,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <PlannerProvider>
-        <AppShell>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-        </AppShell>
+      <AuthProvider>
+        {/* La puerta decide entre /acceso, splash y la app con su layout. */}
+        <AuthGate />
         <Toaster position="top-center" />
-      </PlannerProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

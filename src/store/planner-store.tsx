@@ -9,7 +9,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-import { sampleActivities, sampleUser } from "@/data/sample-data";
+import { sampleActivities } from "@/data/sample-data";
 import { toISODate } from "@/lib/dates";
 import { applyTaskPatch, createId } from "@/lib/planner";
 import { createLocalNotesRepository } from "@/services/notes-repository";
@@ -21,7 +21,6 @@ import type {
   Note,
   Task,
   TaskPatch,
-  UserProfile,
 } from "@/types/planner";
 
 /**
@@ -36,7 +35,6 @@ interface AddTaskDialogState {
 }
 
 interface PlannerContextValue {
-  user: UserProfile;
   tasks: Task[];
   activities: Activity[];
   notes: Note[];
@@ -250,7 +248,6 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<PlannerContextValue>(
     () => ({
-      user: sampleUser,
       tasks,
       activities,
       notes,
