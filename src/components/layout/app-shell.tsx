@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { AddTaskDialog } from "@/components/tasks/add-task-dialog";
+import { TaskDialog } from "@/components/tasks/task-dialog";
 import { AppSidebar } from "./app-sidebar";
 import { Brand } from "./brand";
 import { MobileNav } from "./mobile-nav";
@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <MobileNav />
-      <AddTaskDialog />
+      <TaskDialog />
     </div>
   );
 }

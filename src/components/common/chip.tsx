@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import { forwardRef, type ButtonHTMLAttributes } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -6,10 +6,14 @@ interface ChipProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   selected?: boolean;
 }
 
-export function Chip({ selected, className, ...props }: ChipProps) {
+export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
+  { selected, className, type = "button", ...props },
+  ref,
+) {
   return (
     <button
-      type="button"
+      ref={ref}
+      type={type}
       aria-pressed={selected}
       data-selected={selected || undefined}
       className={cn(
@@ -19,4 +23,4 @@ export function Chip({ selected, className, ...props }: ChipProps) {
       {...props}
     />
   );
-}
+});

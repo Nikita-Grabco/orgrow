@@ -9,7 +9,7 @@ import { SectionCard } from "@/components/common/section-card";
 import { TaskList } from "@/components/tasks/task-list";
 import { Button } from "@/components/ui/button";
 import { useToday } from "@/hooks/use-today";
-import { dayOffsetLabel, dayParts } from "@/lib/dates";
+import { dayOffsetLabel, dayParts, isoFromOffset } from "@/lib/dates";
 import { sortActivities } from "@/lib/planner";
 import { cn } from "@/lib/utils";
 import { usePlanner } from "@/store/planner-store";
@@ -36,7 +36,8 @@ function AgendaPage() {
   const [selected, setSelected] = useState(0);
 
   const dayActivities = sortActivities(activities.filter((a) => a.dayOffset === selected));
-  const dayTasks = tasks.filter((t) => t.dayOffset === selected);
+  const dayISO = isoFromOffset(selected, today);
+  const dayTasks = dayISO ? tasks.filter((t) => t.dueDate === dayISO) : [];
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -45,7 +46,7 @@ function AgendaPage() {
       <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:grid sm:grid-cols-7 sm:px-0">
         {WEEK.map((offset) => {
           const { weekday, day } = dayParts(offset, today);
-          const count = activities.filter((a) => a.dayOffset === offset).length + tasks.filter((t) => t.dayOffset === offset && !t.completed).length;
+          const count = activities.filter((a) => a.dayOffset === offset).length + tasks.filter((t) => t.dueDate === isoFromOffset(offset, today) && !t.completed).length;
           const active = selected === offset;
           return (
             <button
@@ -87,7 +88,7 @@ function AgendaPage() {
           title="Tareas"
           icon={<ListChecks />}
           action={
-            <Button variant="soft" size="sm" onClick={() => openAddTask(selected)}>
+            <Button variant="soft" size="sm" onClick={() => openAddTask(dayISO ?? undefined)}>
               <Plus /> Añadir
             </Button>
           }

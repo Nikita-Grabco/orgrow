@@ -1,77 +1,247 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { toast } from "sonner";
 
-import { sampleActivities, sampleNotes, sampleTasks, sampleUser } from "@/data/sample-data";
-import { createId } from "@/lib/planner";
-import type { Activity, NewNoteInput, NewTaskInput, Note, Task, UserProfile } from "@/types/planner";
+import { sampleActivities, sampleUser } from "@/data/sample-data";
+import { toISODate } from "@/lib/dates";
+import { applyTaskPatch, createId } from "@/lib/planner";
+import { createLocalNotesRepository } from "@/services/notes-repository";
+import { createLocalTasksRepository } from "@/services/tasks-repository";
+import type {
+  Activity,
+  NewNoteInput,
+  NewTaskInput,
+  Note,
+  Task,
+  TaskPatch,
+  UserProfile,
+} from "@/types/planner";
 
 /**
- * In-memory app state seeded with sample data. Components only talk to this
- * hook, so swapping it for a real backend later won't touch the UI.
+ * App state on top of the repositories. Components only talk to this hook, so
+ * the storage (localStorage today, Supabase later) never leaks into the UI.
  */
+interface AddTaskDialogState {
+  open: boolean;
+  mode: "create" | "edit";
+  taskId: string | null;
+  dueDate: string | null;
+}
+
 interface PlannerContextValue {
   user: UserProfile;
   tasks: Task[];
   activities: Activity[];
   notes: Note[];
+  /** False until saved data has been hydrated from the browser. */
+  isReady: boolean;
   toggleTask: (id: string) => void;
   addTask: (input: NewTaskInput) => void;
+  editTask: (id: string, patch: TaskPatch) => void;
   deleteTask: (id: string) => void;
   addNote: (input: NewNoteInput) => void;
   togglePinNote: (id: string) => void;
   deleteNote: (id: string) => void;
   convertNoteToTask: (id: string) => void;
-  addTaskDialog: { open: boolean; dayOffset: number };
-  openAddTask: (dayOffset?: number) => void;
+  addTaskDialog: AddTaskDialogState;
+  /** Omit for today; pass `null` to open the dialog without a date. */
+  openAddTask: (dueDate?: string | null) => void;
+  openEditTask: (id: string) => void;
   setAddTaskOpen: (open: boolean) => void;
 }
 
 const PlannerContext = createContext<PlannerContextValue | null>(null);
 
+const CLOSED_DIALOG: AddTaskDialogState = {
+  open: false,
+  mode: "create",
+  taskId: null,
+  dueDate: null,
+};
+
 export function PlannerProvider({ children }: { children: ReactNode }) {
-  const [tasks, setTasks] = useState<Task[]>(sampleTasks);
-  const [notes, setNotes] = useState<Note[]>(sampleNotes);
+  const tasksRepo = useMemo(createLocalTasksRepository, []);
+  const notesRepo = useMemo(createLocalNotesRepository, []);
+
+  // Empty until hydrated: the server never reads localStorage, so the first
+  // client render matches the server HTML and avoids hydration mismatches.
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [activities] = useState<Activity[]>(sampleActivities);
-  const [addTaskDialog, setAddTaskDialog] = useState({ open: false, dayOffset: 0 });
+  const [isReady, setIsReady] = useState(false);
+  const [addTaskDialog, setAddTaskDialog] = useState<AddTaskDialogState>(CLOSED_DIALOG);
 
-  const toggleTask = useCallback((id: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
-  }, []);
+  const reload = useCallback(async () => {
+    const [nextTasks, nextNotes] = await Promise.all([tasksRepo.list(), notesRepo.list()]);
+    setTasks(nextTasks);
+    setNotes(nextNotes);
+  }, [tasksRepo, notesRepo]);
 
-  const addTask = useCallback((input: NewTaskInput) => {
-    setTasks((prev) => [...prev, { ...input, id: createId("t"), completed: false }]);
-  }, []);
+  useEffect(() => {
+    let active = true;
 
-  const deleteTask = useCallback((id: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+    Promise.all([tasksRepo.list(), notesRepo.list()])
+      .then(([nextTasks, nextNotes]) => {
+        if (!active) return;
+        setTasks(nextTasks);
+        setNotes(nextNotes);
+      })
+      .catch((error: unknown) => {
+        console.error("[orgadia] No se pudieron cargar los datos", error);
+        toast.error("No se pudieron cargar tus datos guardados");
+      })
+      .finally(() => {
+        if (active) setIsReady(true);
+      });
 
-  const addNote = useCallback((input: NewNoteInput) => {
-    setNotes((prev) => [
-      { ...input, id: createId("n"), pinned: false, createdAt: Date.now() },
-      ...prev,
-    ]);
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [tasksRepo, notesRepo]);
 
-  const togglePinNote = useCallback((id: string) => {
-    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)));
-  }, []);
+  /** Optimistic updates roll back to the saved truth when persistence fails. */
+  const reportPersistError = useCallback(
+    async (message: string, error: unknown) => {
+      console.error(`[orgadia] ${message}`, error);
+      toast.error(message);
+      try {
+        await reload();
+      } catch (reloadError) {
+        console.error("[orgadia] No se pudo recargar el estado", reloadError);
+      }
+    },
+    [reload],
+  );
 
-  const deleteNote = useCallback((id: string) => {
-    setNotes((prev) => prev.filter((n) => n.id !== id));
-  }, []);
+  const commitTask = useCallback(
+    (task: Task, patch: TaskPatch) => {
+      const updated = applyTaskPatch(task, patch);
+      setTasks((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+      void tasksRepo
+        .update(updated)
+        .catch((error: unknown) => reportPersistError("No se pudo guardar el cambio", error));
+    },
+    [tasksRepo, reportPersistError],
+  );
+
+  const toggleTask = useCallback(
+    (id: string) => {
+      const task = tasks.find((item) => item.id === id);
+      if (!task) return;
+      commitTask(task, {
+        completed: !task.completed,
+        completedAt: task.completed ? null : Date.now(),
+      });
+    },
+    [tasks, commitTask],
+  );
+
+  const editTask = useCallback(
+    (id: string, patch: TaskPatch) => {
+      const task = tasks.find((item) => item.id === id);
+      if (!task) return;
+      commitTask(task, patch);
+    },
+    [tasks, commitTask],
+  );
+
+  const addTask = useCallback(
+    (input: NewTaskInput) => {
+      const now = Date.now();
+      const task: Task = {
+        ...input,
+        id: createId("t"),
+        completed: false,
+        completedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      setTasks((prev) => [...prev, task]);
+      void tasksRepo
+        .create(task)
+        .catch((error: unknown) => reportPersistError("No se pudo guardar la tarea", error));
+    },
+    [tasksRepo, reportPersistError],
+  );
+
+  const deleteTask = useCallback(
+    (id: string) => {
+      setTasks((prev) => prev.filter((task) => task.id !== id));
+      void tasksRepo
+        .remove(id)
+        .catch((error: unknown) => reportPersistError("No se pudo eliminar la tarea", error));
+    },
+    [tasksRepo, reportPersistError],
+  );
+
+  const addNote = useCallback(
+    (input: NewNoteInput) => {
+      const note: Note = { ...input, id: createId("n"), pinned: false, createdAt: Date.now() };
+      setNotes((prev) => [note, ...prev]);
+      void notesRepo
+        .create(note)
+        .catch((error: unknown) => reportPersistError("No se pudo guardar la nota", error));
+    },
+    [notesRepo, reportPersistError],
+  );
+
+  const togglePinNote = useCallback(
+    (id: string) => {
+      const note = notes.find((item) => item.id === id);
+      if (!note) return;
+
+      const updated: Note = { ...note, pinned: !note.pinned };
+      setNotes((prev) => prev.map((item) => (item.id === id ? updated : item)));
+      void notesRepo
+        .update(updated)
+        .catch((error: unknown) => reportPersistError("No se pudo actualizar la nota", error));
+    },
+    [notes, notesRepo, reportPersistError],
+  );
+
+  const deleteNote = useCallback(
+    (id: string) => {
+      setNotes((prev) => prev.filter((note) => note.id !== id));
+      void notesRepo
+        .remove(id)
+        .catch((error: unknown) => reportPersistError("No se pudo eliminar la nota", error));
+    },
+    [notesRepo, reportPersistError],
+  );
 
   const convertNoteToTask = useCallback(
     (id: string) => {
-      const note = notes.find((n) => n.id === id);
+      const note = notes.find((item) => item.id === id);
       if (!note) return;
-      addTask({ title: note.content, category: "personal", priority: "media", dayOffset: 0 });
+      addTask({
+        title: note.content,
+        category: "personal",
+        priority: "media",
+        dueDate: toISODate(new Date()),
+      });
       deleteNote(id);
     },
     [notes, addTask, deleteNote],
   );
 
-  const openAddTask = useCallback((dayOffset = 0) => {
-    setAddTaskDialog({ open: true, dayOffset });
+  const openAddTask = useCallback((dueDate?: string | null) => {
+    setAddTaskDialog({
+      open: true,
+      mode: "create",
+      taskId: null,
+      dueDate: dueDate === undefined ? toISODate(new Date()) : dueDate,
+    });
+  }, []);
+
+  const openEditTask = useCallback((id: string) => {
+    setAddTaskDialog({ open: true, mode: "edit", taskId: id, dueDate: null });
   }, []);
 
   const setAddTaskOpen = useCallback((open: boolean) => {
@@ -84,8 +254,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       tasks,
       activities,
       notes,
+      isReady,
       toggleTask,
       addTask,
+      editTask,
       deleteTask,
       addNote,
       togglePinNote,
@@ -93,9 +265,27 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       convertNoteToTask,
       addTaskDialog,
       openAddTask,
+      openEditTask,
       setAddTaskOpen,
     }),
-    [tasks, activities, notes, toggleTask, addTask, deleteTask, addNote, togglePinNote, deleteNote, convertNoteToTask, addTaskDialog, openAddTask, setAddTaskOpen],
+    [
+      tasks,
+      activities,
+      notes,
+      isReady,
+      toggleTask,
+      addTask,
+      editTask,
+      deleteTask,
+      addNote,
+      togglePinNote,
+      deleteNote,
+      convertNoteToTask,
+      addTaskDialog,
+      openAddTask,
+      openEditTask,
+      setAddTaskOpen,
+    ],
   );
 
   return <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>;

@@ -9,17 +9,26 @@ export interface Task {
   title: string;
   category: CategoryId;
   priority: Priority;
-  /** Days from today: 0 = today, 1 = tomorrow… */
-  dayOffset: number;
+  /**
+   * Local calendar date "YYYY-MM-DD". `null` means the task has no date.
+   * Never store UTC timestamps here: a task due "today" must stay today in
+   * every time zone, and it must age correctly once the day passes.
+   */
+  dueDate: string | null;
   /** Optional "HH:mm" time. */
   time?: string | undefined;
   completed: boolean;
+  /** Epoch millis of the completion, used for daily metrics. */
+  completedAt?: number | null | undefined;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface Activity {
   id: string;
   title: string;
   category: CategoryId;
+  /** Days from today: 0 = today, 1 = tomorrow… (activities module is still relative). */
   dayOffset: number;
   start: string;
   end?: string | undefined;
@@ -40,5 +49,13 @@ export interface UserProfile {
   initials: string;
 }
 
-export type NewTaskInput = Omit<Task, "id" | "completed">;
+export type NewTaskInput = Pick<Task, "title" | "category" | "priority" | "dueDate" | "time">;
+
+/** Fields the UI may change on an existing task. */
+export type TaskPatch = Partial<
+  Pick<Task, "title" | "category" | "priority" | "dueDate" | "time" | "completed" | "completedAt">
+>;
+
 export type NewNoteInput = Pick<Note, "content" | "kind">;
+
+export type NotePatch = Partial<Pick<Note, "content" | "kind" | "pinned">>;
