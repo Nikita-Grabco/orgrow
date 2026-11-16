@@ -133,8 +133,8 @@ Reglas de arquitectura:
 ## 4. Funcionalidades implementadas
 
 ### Layout y diseño
-- Diseño "Calma" responsive: rail de iconos en tablet, sidebar completo en escritorio,
-  barra inferior en móvil con FAB central.
+- Diseño original ("Calma") ahora bajo la marca **Orgadia**: rail de iconos en tablet,
+  sidebar completo en escritorio, barra inferior en móvil con FAB central.
 - Tema oscuro por tokens, tipografía Source Sans 3.
 - Toasts con `sonner`.
 
@@ -177,6 +177,9 @@ Reglas de arquitectura:
   expulsa a quien ya tiene sesión.
 - Los errores de Supabase se traducen al español en `src/services/auth-errors.ts`
   (nunca se muestra el mensaje interno).
+- El registro pide también un **nickname** ("¿Cómo te llamas?"), que se guarda en
+  `user_metadata.full_name` y es el nombre que se muestra en la app y en el avatar.
+  Sin nickname, se deriva del email.
 - Nombre e iniciales salen del email (`src/lib/user.ts`) mientras no exista
   `profiles` (Parte 3). `sampleUser` ("Nikita/NG") eliminado.
 - Cerrar sesión disponible en la barra lateral (escritorio/tablet) y en la cabecera
@@ -309,8 +312,9 @@ históricas, adjuntos.
 2. **Dos lockfiles.** `bun.lock` (Lovable) y `package-lock.json` (npm). `bun` no está
    instalado, así que `bun.lock` no refleja los cambios de dependencias. Decidir un
    único gestor antes de producción.
-3. **Nombre de la app.** La UI y los metadatos dicen "Calma"; el proyecto se llama
-   **Orgadia**. Unificar textos, título, manifest y favicon en una tarea de marca.
+3. ~~**Nombre de la app.**~~ ✅ Resuelto: la marca, los títulos de página y el
+   favicon pendiente dicen **Orgadia** (el manifest llega en la Parte 7). Se mantiene
+   la frase "Empecemos con calma" como texto, no como marca.
 4. **`next-up-card` y `upcoming-activities` siguen 100 % con datos de ejemplo**
    (no dependen de tareas). Se resolverá con la Parte 6.
 5. **Notas:** no se pueden editar ni buscar; no hay persistencia remota.

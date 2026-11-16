@@ -3,6 +3,7 @@ import { Loader2, LogIn } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { Chip } from "@/components/common/chip";
+import { Brand } from "@/components/layout/brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,10 +12,10 @@ import { useAuth } from "@/store/auth-store";
 export const Route = createFileRoute("/acceso")({
   head: () => ({
     meta: [
-      { title: "Acceso — Calma" },
-      { name: "description", content: "Entra en tu cuenta de Calma para ver tus tareas." },
-      { property: "og:title", content: "Acceso — Calma" },
-      { property: "og:description", content: "Entra en tu cuenta de Calma para ver tus tareas." },
+      { title: "Acceso — Orgadia" },
+      { name: "description", content: "Entra en tu cuenta de Orgadia para ver tus tareas." },
+      { property: "og:title", content: "Acceso — Orgadia" },
+      { property: "og:description", content: "Entra en tu cuenta de Orgadia para ver tus tareas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -27,6 +28,7 @@ type Mode = "signin" | "signup";
 function AccessPage() {
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<Mode>("signin");
+  const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
@@ -45,6 +47,7 @@ function AccessPage() {
 
     const cleanEmail = email.trim();
     if (!cleanEmail || !password) return;
+    if (mode === "signup" && !nickname.trim()) return;
 
     setPending(true);
     setError(null);
@@ -56,7 +59,11 @@ function AccessPage() {
         // Si va bien, la puerta de la app redirige sola al dashboard.
         if (signInError) setError(signInError);
       } else {
-        const { error: signUpError, needsConfirmation } = await signUp(cleanEmail, password);
+        const { error: signUpError, needsConfirmation } = await signUp(
+          cleanEmail,
+          password,
+          nickname,
+        );
         if (signUpError) setError(signUpError);
         else if (needsConfirmation) {
           setNotice("Cuenta creada. Revisa tu correo y confirma el enlace para poder entrar.");
@@ -74,18 +81,13 @@ function AccessPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-5 py-10">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <span className="relative grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-soft">
-            <span className="font-display font-semibold text-2xl leading-none">c</span>
-            <span className="absolute -right-0.5 -top-0.5 size-3 rounded-full border-2 border-background bg-personal" />
-          </span>
-          <div>
-            <h1 className="font-display font-semibold text-3xl leading-tight text-foreground">calma</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {isSignup
-                ? "Crea tu cuenta para empezar a organizar tu día."
-                : "Entra para ver tus tareas y tus notas."}
-            </p>
-          </div>
+          <h1 className="sr-only">Acceso a Orgadia</h1>
+          <Brand link={false} surface="background" />
+          <p className="text-sm text-muted-foreground">
+            {isSignup
+              ? "Crea tu cuenta para empezar a organizar tu día."
+              : "Entra para ver tus tareas y tus notas."}
+          </p>
         </div>
 
         <div className="surface space-y-5 p-6">
@@ -99,6 +101,24 @@ function AccessPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isSignup && (
+              <div className="space-y-2">
+                <Label htmlFor="nickname">¿Cómo te llamas?</Label>
+                <Input
+                  id="nickname"
+                  type="text"
+                  name="nickname"
+                  autoComplete="nickname"
+                  required
+                  maxLength={40}
+                  value={nickname}
+                  onChange={(event) => setNickname(event.target.value)}
+                  placeholder="Tu nombre, el que verás en la app"
+                  className="h-11 rounded-xl"
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -144,7 +164,13 @@ function AccessPage() {
               </p>
             )}
 
-            <Button type="submit" className="h-11 w-full" disabled={pending || !email.trim() || !password}>
+            <Button
+              type="submit"
+              className="h-11 w-full"
+              disabled={
+                pending || !email.trim() || !password || (isSignup && !nickname.trim())
+              }
+            >
               {pending ? <Loader2 className="animate-spin" /> : <LogIn />}
               {isSignup ? "Crear cuenta" : "Entrar"}
             </Button>

@@ -37,7 +37,7 @@ interface AuthContextValue {
   displayName: string;
   initials: string;
   signIn: (email: string, password: string) => Promise<AuthResult>;
-  signUp: (email: string, password: string) => Promise<AuthResult>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 }
 
@@ -108,10 +108,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signUp = useCallback(
-    async (email: string, password: string): Promise<AuthResult> => {
+    async (email: string, password: string, fullName?: string): Promise<AuthResult> => {
       if (!configured) return { error: "Este dispositivo no tiene configurado el servidor." };
       try {
-        const { data, error } = await getSupabaseClient().auth.signUp({ email, password });
+        const cleanName = fullName?.trim() ?? "";
+        const { data, error } = await getSupabaseClient().auth.signUp({
+          email,
+          password,
+          // `full_name` acaba en `raw_user_meta_data` y es el nombre que se
+          // muestra en la app. La tabla `profiles` (Parte 3) lo sustituirá.
+          ...(cleanName ? { options: { data: { full_name: cleanName } } } : {}),
+        });
         if (error) return { error: translateAuthError(error) };
         // Sin sesión = el proyecto exige confirmar el email antes de entrar.
         return { error: null, needsConfirmation: !data.session };

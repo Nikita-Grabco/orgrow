@@ -2,23 +2,11 @@ import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { Brand } from "@/components/layout/brand";
 import { PlannerProvider } from "@/store/planner-store";
 import { useAuth } from "@/store/auth-store";
 
 export const ACCESS_PATH = "/acceso";
-
-/** Marca de la app sin enlace: se usa antes de saber si hay sesión. */
-function BrandMark() {
-  return (
-    <span className="flex items-center gap-2.5">
-      <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-soft">
-        <span className="font-display font-semibold text-xl leading-none">c</span>
-        <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-background bg-personal" />
-      </span>
-      <span className="font-display font-semibold text-2xl leading-none text-foreground">calma</span>
-    </span>
-  );
-}
 
 function CenteredScreen({ children }: { children: React.ReactNode }) {
   return (
@@ -32,7 +20,7 @@ function CenteredScreen({ children }: { children: React.ReactNode }) {
 function AuthSplash() {
   return (
     <CenteredScreen>
-      <BrandMark />
+      <Brand link={false} surface="background" />
       <p className="animate-pulse text-sm font-medium text-muted-foreground" role="status">
         Cargando tu día…
       </p>
@@ -44,7 +32,7 @@ function AuthSplash() {
 function MissingConfiguration() {
   return (
     <CenteredScreen>
-      <BrandMark />
+      <Brand link={false} surface="background" />
       <div className="surface max-w-md space-y-3 p-6 text-center">
         <h1 className="font-display font-semibold text-xl text-foreground">Falta configurar el servidor</h1>
         <p className="text-sm text-muted-foreground">

@@ -19,9 +19,9 @@ import type { CategoryId } from "@/types/planner";
 export const Route = createFileRoute("/tareas")({
   head: () => ({
     meta: [
-      { title: "Tareas — Calma" },
+      { title: "Tareas — Orgadia" },
       { name: "description", content: "Todas tus tareas por día y categoría, con su progreso." },
-      { property: "og:title", content: "Tareas — Calma" },
+      { property: "og:title", content: "Tareas — Orgadia" },
       { property: "og:description", content: "Todas tus tareas por día y categoría, con su progreso." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

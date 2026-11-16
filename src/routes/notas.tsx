@@ -15,9 +15,9 @@ import type { NoteKind } from "@/types/planner";
 export const Route = createFileRoute("/notas")({
   head: () => ({
     meta: [
-      { title: "Notas e ideas — Calma" },
+      { title: "Notas e ideas — Orgadia" },
       { name: "description", content: "Apunta ideas y cosas que quieres hacer algún día, sin fecha, para que no se te olviden." },
-      { property: "og:title", content: "Notas e ideas — Calma" },
+      { property: "og:title", content: "Notas e ideas — Orgadia" },
       { property: "og:description", content: "Ideas y pendientes sin fecha, para que no se te olviden." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
