@@ -3,8 +3,8 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-16
-Commit de referencia: `7098b7c` (chore(deps): corregir vulnerabilidades de npm audit)
+Última actualización: 2026-11-16 (Parte 1 completada)
+Commit de referencia: `75172e7` (feat(tareas): CRUD completo con fechas reales y persistencia)
 Rama: `main`
 
 ---
@@ -45,10 +45,12 @@ Entorno local verificado: **Node.js v24.21.0**, **npm 11.19.0** (Windows).
 | react-day-picker | 9.14.0 |
 | sonner (toasts) | 2.0.8 |
 | Vitest | 4.1.12 (+ Testing Library, jsdom) |
+| `@supabase/supabase-js` | 2.119.0 |
 | Nitro | 3.0.260603-beta (build de servidor) |
 | `@lovable.dev/vite-tanstack-config` | 2.27.2 |
 
-Sin dependencias nuevas añadidas para el módulo de Tareas.
+Sin dependencias nuevas para el módulo de Tareas. La primera dependencia nueva del
+proyecto es `@supabase/supabase-js` (Parte 1).
 
 ### Notas de dependencias (importante)
 
@@ -75,7 +77,8 @@ UI (routes + components)
         └── src/store/planner-store.tsx   ← estado en memoria + actualización optimista
               └── src/services/*-repository.ts  ← interfaz tipo tabla (list/create/update/remove)
                     └── src/services/planner-storage.ts  ← localStorage versionado (hoy)
-                    └── supabase-*.ts                 ← futuro, misma interfaz
+                    └── src/services/supabase-client.ts ← cliente de Supabase (Parte 1)
+                    └── supabase-*-repository.ts        ← futuro, misma interfaz
 ```
 
 ```
@@ -83,6 +86,8 @@ dia-en-orden/
 ├── PROJECT_STATUS.md          ← este archivo
 ├── AGENTS.md                  ← reglas del proyecto + reglas de Lovable
 ├── package.json               ← scripts, overrides, dependencias
+├── .env.example               ← nombres de las variables (valores vacíos, sí se versiona)
+├── .env.local                 ← valores reales, IGNORADO por git
 ├── .lovable/                  ← metadatos de Lovable (no editar)
 ├── public/                    ← favicon, robots.txt
 └── src/
@@ -104,10 +109,11 @@ dia-en-orden/
     ├── data/                  ← sample-data.ts (semilla del primer arranque)
     ├── hooks/                 ← useToday, useMobile
     ├── lib/                   ← dates.ts, planner.ts, utils.ts, errores
-    ├── services/              ← planner-storage, tasks-repository, notes-repository
+    ├── services/              ← planner-storage, tasks-repository, notes-repository, supabase-client
     ├── store/                 ← planner-store.tsx
     ├── test/                  ← setup + tests
     ├── types/                 ← planner.ts (tipos del dominio)
+    ├── env.d.ts               ← tipos de las variables VITE_*
     ├── styles.css             ← tema completo (tokens de color)
     ├── router.tsx, server.ts, start.ts
     └── routeTree.gen.ts       ← AUTOGENERADO, no editar a mano
@@ -156,10 +162,22 @@ Reglas de arquitectura:
 - Actualización optimista con rollback y aviso si el guardado falla.
 - Datos corruptos → se ignoran y se vuelve a sembrar (nunca rompe la UI).
 
+### Backend (Parte 1)
+
+- Cliente único de Supabase en `src/services/supabase-client.ts`, creado de forma
+  perezosa (`getSupabaseClient()`), con `persistSession`, `autoRefreshToken`,
+  `detectSessionInUrl` y `storageKey: "orgadia:auth"`.
+- `getSupabaseConfig()` valida que las dos variables existan y que la URL tenga
+  forma de proyecto Supabase; `SupabaseConfigError` explica qué falta.
+- `isSupabaseConfigured()` permite degradar a modo local si no hay entorno.
+- Tipado de `import.meta.env` en `src/env.d.ts`.
+
 ### Calidad
-- 20 tests en 5 archivos (fechas, agrupación, repositorios, store/persistencia, rutas).
+- 25 tests en 6 archivos (fechas, agrupación, repositorios, store/persistencia, rutas,
+  configuración de Supabase).
 - `npm run build` y `npx tsc --noEmit` en verde.
 - SSR verificado: `/`, `/tareas`, `/agenda`, `/notas` responden 200.
+- Conexión comprobada contra el proyecto real: `/auth/v1/health` responde 200.
 
 ---
 
@@ -167,25 +185,28 @@ Reglas de arquitectura:
 
 _(Ver el plan de 11 partes acordado con el usuario.)_
 
-1. **Parte 1 — Backend:** proyecto **Supabase propio** (decisión tomada), entornos y
-   secretos, cliente de Supabase.
-2. **Parte 2 — Autenticación:** login (un solo usuario real, pero con auth),
+✅ **Parte 1 — Backend: completada.** Proyecto Supabase propio, `.env.local` +
+`.env.example`, `@supabase/supabase-js` y cliente único validado.
+
+Las siguientes partes del plan ya están cubiertas en "implementado" donde aplica:
+
+1. **Parte 2 — Autenticación:** login (un solo usuario real, pero con auth),
    sesión persistente, rutas protegidas, perfil real (hoy `sampleUser` = "Nikita").
-3. **Parte 3 — Esquema y RLS:** tablas `profiles`, `tasks`, `notes`, `activities`,
+2. **Parte 3 — Esquema y RLS:** tablas `profiles`, `tasks`, `notes`, `activities`,
    índices y políticas por usuario.
-4. **Parte 4 — Tareas en servidor:** repositorio Supabase, TanStack Query, importación
+3. **Parte 4 — Tareas en servidor:** repositorio Supabase, TanStack Query, importación
    de los datos locales, sincronización entre dispositivos.
-5. **Parte 5 — Notas:** editar, buscar, filtros y persistencia en servidor.
-6. **Parte 6 — Agenda real:** CRUD de actividades, fechas/horas reales, navegación
+4. **Parte 5 — Notas:** editar, buscar, filtros y persistencia en servidor.
+5. **Parte 6 — Agenda real:** CRUD de actividades, fechas/horas reales, navegación
    entre semanas (hoy son de solo lectura con `dayOffset`).
-7. **Parte 7 — PWA:** instalable, service worker, offline y cola de escrituras.
-8. **Parte 8 — Recordatorios:** hora de aviso, Web Push y función programada
+6. **Parte 7 — PWA:** instalable, service worker, offline y cola de escrituras.
+7. **Parte 8 — Recordatorios:** hora de aviso, Web Push y función programada
    (iOS requiere PWA instalada; valorar Capacitor más adelante).
-9. **Parte 9 — Ajustes:** perfil, zona horaria, exportar/importar JSON, categorías
+8. **Parte 9 — Ajustes:** perfil, zona horaria, exportar/importar JSON, categorías
    propias, borrado de cuenta.
-10. **Parte 10 — Calidad/seguridad:** validación con `zod` en servidor, tests de RLS,
-    rate limiting, E2E con Playwright, accesibilidad, lint normalizado.
-11. **Parte 11 — Producción:** dominio, entornos, backups, monitorización, CI/CD,
+9. **Parte 10 — Calidad/seguridad:** validación con `zod` en servidor, tests de RLS,
+   rate limiting, E2E con Playwright, accesibilidad, lint normalizado.
+10. **Parte 11 — Producción:** dominio, entornos, backups, monitorización, CI/CD,
     releases y posible envoltorio nativo.
 
 Extras no planificados aún: recurrencia de tareas, búsqueda global, estadísticas
@@ -209,6 +230,9 @@ históricas, adjuntos.
 | 2026-11 | Actualización **optimista** con recarga en caso de error | UI instantánea y sin mentir sobre lo guardado |
 | 2026-11 | `vite` fijado exacto + overrides documentados | Parchear vulnerabilidades sin romper el build |
 | 2026-11 | No se toca `src/components/ui/*` ni `styles.css` al añadir funcionalidad | Mantener el diseño de Lovable intacto |
+| 2026-11 | Cliente de Supabase **perezoso** (no al importar el módulo) | SSR y build no tienen variables ni `localStorage`; así nada se rompe |
+| 2026-11 | Variable `VITE_SUPABASE_PUBLISHABLE_KEY` (no `ANON_KEY`) | Es la clave que emite Supabase hoy; el nombre evita confundirla con un secreto |
+| 2026-11 | `.gitignore` bloquea `.env` y `.env.*`, permite `.env.example` | Evitar filtrar claves por accidente |
 
 ---
 
@@ -220,21 +244,28 @@ históricas, adjuntos.
 - ⚠️ Pendiente una revisión visual manual en dispositivos reales.
 
 ### Backend
-- ❌ **No existe** backend de negocio.
+- ✅ **Parte 1 completada:** cliente de Supabase configurado y verificado contra el
+  proyecto real (`src/services/supabase-client.ts`).
+- El cliente se crea **de forma perezosa**; si faltan variables, la app sigue
+  funcionando con `localStorage` en lugar de romperse.
 - Existe andamiaje de TanStack Start: `src/server.ts` (entrada SSR y errores),
   `src/start.ts` (middlewares de error y CSRF), `QueryClient` por petición en
   `src/router.tsx`. No hay endpoints ni *server functions* en uso.
+- ❌ Sin auth todavía (Parte 2) y sin consultas a datos (Parte 4).
 
 ### Base de datos
-- ❌ **No hay base de datos conectada.**
+- ✅ Proyecto de Supabase creado (región UE) y accesible: el endpoint REST responde
+  y rechaza tablas inexistentes con `PGRST205`, lo que confirma que la clave es válida.
+- ❌ **Aún no hay tablas ni políticas RLS** (Parte 3).
 - Datos en `localStorage` del navegador (por dispositivo, sin sincronización).
-- No existe carpeta `supabase/` ni migraciones.
-- No hay `.env` ni claves en el repositorio.
+- No existe carpeta `supabase/` ni migraciones. **El esquema se gestiona desde el
+  panel de Supabase**, no con migraciones a mano en el repo.
+- La clave real vive solo en `.env.local` (ignorado por git); el repo contiene
+  únicamente `.env.example` con nombres y valores vacíos.
 
 ### Repositorio
-- Commit `7098b7c` incluye la corrección de dependencias.
-- **Trabajo pendiente de commit:** el módulo de Tareas completo (13 archivos
-  modificados, 8 nuevos, 1 eliminado).
+- `75172e7` — módulo de Tareas completo + `PROJECT_STATUS.md`.
+- Parte 1 (cliente de Supabase) commiteada a continuación.
 
 ---
 
@@ -283,32 +314,59 @@ Advertencias:
 - El proyecto está conectado a Lovable: **no reescribir historial publicado**
   (nada de force push, rebase o amend sobre commits ya subidos).
 
-### Variables de entorno (previstas)
+### Variables de entorno
 
-Nombres previstos para la Parte 1; los valores **no se guardan en el repositorio**:
+Los valores **no se guardan en el repositorio**. Se declaran en `.env.local`
+(ignorado por git) y sus nombres, vacíos, en `.env.example`:
 
 ```
 VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_PUBLISHABLE_KEY=
 ```
 
-La *service role key* nunca debe estar en código de navegador ni en el repositorio.
+- Se usa el nombre **publishable** porque Supabase ya no emite `anon` clásicas para
+  proyectos nuevos; esta clave es pública por diseño y el acceso lo limita RLS.
+- La *service role / secret key* **nunca** debe estar en código de navegador ni en el
+  repositorio.
+- Tipado de las dos variables en `src/env.d.ts`.
 
 ---
 
 ## 10. Siguiente paso exacto
 
-**Parte 1 — Conexión del backend (Supabase propio).**
+**Parte 2 — Autenticación y perfiles.**
 
-1. Crear un proyecto en Supabase (elegir región europea) y anotar la URL y la
-   `anon key` en un gestor de secretos, **no en el repositorio**.
-2. Crear `.env.local` (ignorado por git) con `VITE_SUPABASE_URL` y
-   `VITE_SUPABASE_ANON_KEY`, y un `.env.example` con los nombres vacíos.
-3. Instalar `@supabase/supabase-js` (primera dependencia nueva del proyecto).
-4. Crear `src/services/supabase-client.ts` con un cliente único y tipado.
-5. Verificar que `npm run build`, `npx tsc --noEmit` y `npm run test` siguen en verde.
+1. Activar el proveedor **Email** en Supabase (Authentication → Providers). Decidir
+   entre enlace mágico y contraseña (recomendado: enlace mágico, sin contraseñas que
+   gestionar). Opcional: Google.
+2. Crear la tabla `profiles` (id = `auth.users.id`, nombre, iniciales, timestamps) —
+   se hará junto con el esquema de la Parte 3 si conviene adelantarla.
+3. Añadir la capa de sesión en el cliente: `supabase.auth.getSession()`,
+   `onAuthStateChange` y un `AuthProvider` que exponga `user`, `isLoading`, `signIn`,
+   `signOut` a la UI.
+4. Pantalla de acceso con el lenguaje visual actual y **rutas protegidas** en
+   `__root.tsx` (redirección a `/acceso` sin sesión).
+5. Sustituir `sampleUser` ("Nikita/NG") por el perfil real en `UserAvatar` y saludo.
 
-**Criterio de terminado:** la app arranca igual que ahora, el cliente de Supabase
-inicializa sin errores y no hay secretos en el repositorio.
+**Criterio de terminado:** sin sesión no se ve ningún dato; con sesión, la app se ve
+exactamente igual que hoy y el perfil muestra el nombre real.
 
-Después de esta parte: **Parte 2 — Autenticación y perfiles**.
+Después de esta parte: **Parte 3 — Esquema y RLS**.
+
+---
+
+## Historial de partes
+
+| Parte | Estado | Commit |
+|---|---|---|
+| 1 — Conexión del backend (Supabase) | ✅ completada | ver `git log` |
+| 2 — Autenticación y perfiles | ⏳ siguiente | — |
+| 3 — Esquema y RLS | ⏳ pendiente | — |
+| 4 — Tareas en servidor | ⏳ pendiente | — |
+| 5 — Notas completas | ⏳ pendiente | — |
+| 6 — Agenda real | ⏳ pendiente | — |
+| 7 — PWA y offline | ⏳ pendiente | — |
+| 8 — Recordatorios | ⏳ pendiente | — |
+| 9 — Ajustes y datos | ⏳ pendiente | — |
+| 10 — Calidad y seguridad | ⏳ pendiente | — |
+| 11 — Producción | ⏳ pendiente | — |
