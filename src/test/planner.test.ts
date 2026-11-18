@@ -1,7 +1,15 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { applyTaskPatch, groupTasksByDate } from "@/lib/planner";
-import type { Task } from "@/types/planner";
+import {
+  applyActivityPatch,
+  applyTaskPatch,
+  getActivitiesOn,
+  getUpcomingActivities,
+  groupActivitiesByDate,
+  groupTasksByDate,
+  sortActivities,
+} from "@/lib/planner";
+import type { Activity, Task } from "@/types/planner";
 
 const today = new Date(2026, 10, 16);
 
@@ -87,5 +95,85 @@ describe("applyTaskPatch", () => {
   it("can clear the due date explicitly", () => {
     const task = makeTask({ id: "a", title: "Con fecha" });
     expect(applyTaskPatch(task, { dueDate: null }).dueDate).toBeNull();
+  });
+});
+
+function makeActivity(
+  overrides: Partial<Activity> & Pick<Activity, "id" | "title" | "date" | "start">,
+): Activity {
+  return {
+    category: "personal",
+    createdAt: 1,
+    updatedAt: 1,
+    ...overrides,
+  };
+}
+
+describe("activity helpers", () => {
+  const activities: Activity[] = [
+    makeActivity({ id: "a1", title: "Yoga", date: "2026-11-16", start: "19:00", end: "20:00" }),
+    makeActivity({ id: "a2", title: "Reunión", date: "2026-11-16", start: "10:00" }),
+    makeActivity({ id: "a3", title: "Dentista", date: "2026-11-17", start: "09:30" }),
+    makeActivity({ id: "a4", title: "Cena", date: "2026-11-15", start: "21:00" }),
+  ];
+
+  it("sorts by date and then by start time", () => {
+    expect(sortActivities(activities).map((a) => a.id)).toEqual(["a4", "a2", "a1", "a3"]);
+  });
+
+  it("filters the activities of one day, ordered by time", () => {
+    expect(getActivitiesOn(activities, "2026-11-16").map((a) => a.id)).toEqual(["a2", "a1"]);
+    expect(getActivitiesOn(activities, "2026-11-20")).toEqual([]);
+    expect(getActivitiesOn(activities, null)).toEqual([]);
+  });
+
+  it("groups activities by day in chronological order", () => {
+    const groups = groupActivitiesByDate(activities);
+    expect(groups.map((group) => group.date)).toEqual([
+      "2026-11-15",
+      "2026-11-16",
+      "2026-11-17",
+    ]);
+    expect(groups[1]?.activities.map((a) => a.id)).toEqual(["a2", "a1"]);
+  });
+
+  it("keeps future days and only today's unfinished activities", () => {
+    const upcoming = getUpcomingActivities(activities, "2026-11-16", "12:00");
+    // a2 at 10:00 has no end time, so it is considered finished.
+    expect(upcoming.map((a) => a.id)).toEqual(["a1", "a3"]);
+
+    // An activity still running counts as upcoming.
+    expect(getUpcomingActivities(activities, "2026-11-16", "19:30").map((a) => a.id)).toEqual([
+      "a1",
+      "a3",
+    ]);
+
+    // Before the server clock is known, everything is listed.
+    expect(getUpcomingActivities(activities, null, null)).toHaveLength(4);
+  });
+
+  it("applies activity patches without losing untouched fields", () => {
+    const activity = makeActivity({
+      id: "a1",
+      title: "Reunión",
+      date: "2026-11-16",
+      start: "10:00",
+      location: "Sala Norte",
+      updatedAt: 1,
+    });
+
+    const moved = applyActivityPatch(activity, { date: "2026-11-18", start: "11:00" });
+
+    expect(moved.date).toBe("2026-11-18");
+    expect(moved.start).toBe("11:00");
+    expect(moved.title).toBe("Reunión");
+    expect(moved.location).toBe("Sala Norte");
+    expect(moved.updatedAt).toBeGreaterThan(1);
+
+    // Optional fields are sent as `null` so clearing them in the form sticks.
+    expect(applyActivityPatch(activity, { location: null }).location).toBeUndefined();
+    expect(applyActivityPatch(activity, { end: null }).end).toBeUndefined();
+    // `undefined` means "do not touch".
+    expect(applyActivityPatch(activity, { start: "11:00" }).location).toBe("Sala Norte");
   });
 });

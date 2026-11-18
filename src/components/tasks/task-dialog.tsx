@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Chip } from "@/components/common/chip";
+import { DatePickerField } from "@/components/common/date-picker-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,7 +18,6 @@ import { useToday } from "@/hooks/use-today";
 import { cn } from "@/lib/utils";
 import { usePlanner } from "@/store/planner-store";
 import type { CategoryId, NewTaskInput, Priority, Task } from "@/types/planner";
-import { TaskDatePicker } from "./task-date-picker";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -63,7 +63,7 @@ function TaskForm({ mode, task, initialDueDate, onSubmit }: TaskFormProps) {
       />
 
       <Field label="Cuándo">
-        <TaskDatePicker value={dueDate} onChange={setDueDate} today={today} />
+        <DatePickerField value={dueDate} onChange={setDueDate} today={today} />
       </Field>
 
       <Field label="Hora (opcional)">
@@ -108,14 +108,14 @@ function TaskForm({ mode, task, initialDueDate, onSubmit }: TaskFormProps) {
 }
 
 export function TaskDialog() {
-  const { tasks, addTask, editTask, addTaskDialog, setAddTaskOpen } = usePlanner();
-  const { open, mode, taskId, dueDate } = addTaskDialog;
+  const { tasks, addTask, editTask, taskDialog, setTaskDialogOpen } = usePlanner();
+  const { open, mode, taskId, dueDate } = taskDialog;
   const editingTask = mode === "edit" ? tasks.find((task) => task.id === taskId) : undefined;
 
   // Closing should always work, even for a form that failed to render.
   useEffect(() => {
-    if (open && mode === "edit" && !editingTask) setAddTaskOpen(false);
-  }, [open, mode, editingTask, setAddTaskOpen]);
+    if (open && mode === "edit" && !editingTask) setTaskDialogOpen(false);
+  }, [open, mode, editingTask, setTaskDialogOpen]);
 
   function handleSubmit(input: NewTaskInput) {
     if (mode === "edit" && editingTask) {
@@ -125,11 +125,11 @@ export function TaskDialog() {
       addTask(input);
       toast.success("Tarea añadida", { description: input.title });
     }
-    setAddTaskOpen(false);
+    setTaskDialogOpen(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={setAddTaskOpen}>
+    <Dialog open={open} onOpenChange={setTaskDialogOpen}>
       <DialogContent className="max-h-[92vh] w-[calc(100%-1.5rem)] overflow-y-auto rounded-3xl sm:max-w-lg sm:rounded-3xl">
         <DialogHeader className="text-left">
           <DialogTitle className="font-display text-2xl font-semibold">

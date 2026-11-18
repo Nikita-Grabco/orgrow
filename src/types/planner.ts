@@ -28,11 +28,18 @@ export interface Activity {
   id: string;
   title: string;
   category: CategoryId;
-  /** Days from today: 0 = today, 1 = tomorrow… (activities module is still relative). */
-  dayOffset: number;
+  /**
+   * Local calendar date "YYYY-MM-DD", same rule as `Task.dueDate`: a meeting on
+   * the 16th is on the 16th in every time zone and ages with the calendar.
+   */
+  date: string;
+  /** "HH:mm" start time. */
   start: string;
+  /** "HH:mm" end time, optional. */
   end?: string | undefined;
   location?: string | undefined;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface Note {
@@ -59,3 +66,17 @@ export type TaskPatch = Partial<
 export type NewNoteInput = Pick<Note, "content" | "kind">;
 
 export type NotePatch = Partial<Pick<Note, "content" | "kind" | "pinned">>;
+
+export type NewActivityInput = Pick<
+  Activity,
+  "title" | "category" | "date" | "start" | "end" | "location"
+>;
+
+/** Fields the UI may change on an existing activity. */
+export type ActivityPatch = Partial<
+  Pick<Activity, "title" | "category" | "date" | "start">
+> & {
+  /** `null` clears the optional value; `undefined` leaves it untouched. */
+  end?: string | null | undefined;
+  location?: string | null | undefined;
+};

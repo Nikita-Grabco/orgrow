@@ -1,4 +1,14 @@
-import { addDays, differenceInCalendarDays, format, isValid, parseISO, startOfDay } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  differenceInCalendarDays,
+  format,
+  isValid,
+  parseISO,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 import { es } from "date-fns/locale";
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -11,22 +21,6 @@ export function getGreeting(hour: number): string {
 
 export function formatLongDate(date: Date): string {
   return capitalize(format(date, "EEEE, d 'de' MMMM", { locale: es }));
-}
-
-export function dayOffsetLabel(offset: number, today: Date | null): string {
-  if (offset === 0) return "Hoy";
-  if (offset === 1) return "Mañana";
-  if (!today) return `En ${offset} días`;
-  return capitalize(format(addDays(today, offset), "EEEE d", { locale: es }));
-}
-
-export function dayParts(offset: number, today: Date | null) {
-  if (!today) return { weekday: offset === 0 ? "Hoy" : `+${offset}`, day: "" };
-  const date = addDays(today, offset);
-  return {
-    weekday: capitalize(format(date, "EEE", { locale: es }).replace(".", "")),
-    day: format(date, "d"),
-  };
 }
 
 export function currentTimeString(date: Date): string {
@@ -88,4 +82,74 @@ export function dueDateLabel(dueDate: string | null | undefined, today: Date | n
   if (diff === 1) return "Mañana";
   if (diff === -1) return "Ayer";
   return capitalize(format(parseISODate(dueDate), "EEE d MMM", { locale: es }).replaceAll(".", ""));
+}
+
+/* -------------------------------------------------------------------------- */
+/* Calendar navigation for the agenda: weeks start on Monday, always ISO dates. */
+/* -------------------------------------------------------------------------- */
+
+const WEEK_STARTS_ON_MONDAY = { weekStartsOn: 1 } as const;
+
+/** Initials of Monday–Sunday, used by the month grid header. */
+export const WEEKDAY_INITIALS = ["L", "M", "X", "J", "V", "S", "D"] as const;
+
+export function shiftISODate(iso: string, days: number): string {
+  return toISODate(addDays(parseISODate(iso), days));
+}
+
+export function shiftISOMonths(iso: string, months: number): string {
+  return toISODate(addMonths(parseISODate(iso), months));
+}
+
+/** Monday → Sunday of the week that contains `iso`. */
+export function weekDatesISO(iso: string): string[] {
+  const start = startOfWeek(parseISODate(iso), WEEK_STARTS_ON_MONDAY);
+  return Array.from({ length: 7 }, (_, index) => toISODate(addDays(start, index)));
+}
+
+/**
+ * 42 consecutive dates (6 rows × 7 columns) covering the month of `iso`, so the
+ * grid keeps the same height in every month.
+ */
+export function monthGridISO(iso: string): string[] {
+  const start = startOfWeek(startOfMonth(parseISODate(iso)), WEEK_STARTS_ON_MONDAY);
+  return Array.from({ length: 42 }, (_, index) => toISODate(addDays(start, index)));
+}
+
+export function isSameMonthISO(iso: string, anchor: string): boolean {
+  return iso.slice(0, 7) === anchor.slice(0, 7);
+}
+
+/** "Noviembre de 2026" */
+export function monthLabel(iso: string): string {
+  return capitalize(format(parseISODate(iso), "MMMM 'de' yyyy", { locale: es }));
+}
+
+/** "10 – 16 nov" or "30 nov – 6 dic". */
+export function weekLabel(iso: string): string {
+  const dates = weekDatesISO(iso);
+  const first = parseISODate(dates[0] ?? iso);
+  const last = parseISODate(dates[6] ?? iso);
+  const left = format(first, "d MMM", { locale: es });
+  const right = format(last, "d MMM", { locale: es });
+  return capitalize(`${left} – ${right}`);
+}
+
+/** "lun" / "mar"… without the trailing dot. */
+export function shortWeekday(iso: string): string {
+  return format(parseISODate(iso), "EEE", { locale: es }).replace(".", "");
+}
+
+export function dayOfMonth(iso: string): string {
+  return format(parseISODate(iso), "d");
+}
+
+/** "Lunes, 16 de noviembre" para la cabecera de la vista de día. */
+export function longDateLabel(iso: string): string {
+  return capitalize(format(parseISODate(iso), "EEEE, d 'de' MMMM", { locale: es }));
+}
+
+/** Etiqueta corta con el mes, para listas que cruzan meses. */
+export function shortDateLabel(iso: string): string {
+  return capitalize(format(parseISODate(iso), "EEE d MMM", { locale: es }).replaceAll(".", ""));
 }

@@ -1,5 +1,13 @@
 import { dueDateLabel, isOverdue } from "@/lib/dates";
-import type { Activity, Note, Priority, Task, TaskPatch } from "@/types/planner";
+import { compareTime } from "@/lib/time";
+import type {
+  Activity,
+  ActivityPatch,
+  Note,
+  Priority,
+  Task,
+  TaskPatch,
+} from "@/types/planner";
 
 export function getProgress(tasks: Task[]) {
   const total = tasks.length;
@@ -36,14 +44,51 @@ export function sortTasks(tasks: Task[]): Task[] {
 }
 
 export function sortActivities(activities: Activity[]): Activity[] {
-  return [...activities].sort((a, b) => a.dayOffset - b.dayOffset || a.start.localeCompare(b.start));
+  return [...activities].sort(
+    (a, b) => a.date.localeCompare(b.date) || compareTime(a.start, b.start),
+  );
 }
 
-/** Activities that haven't started yet, given the current "HH:mm". */
-export function getUpcoming(activities: Activity[], nowTime: string | null): Activity[] {
-  return sortActivities(activities).filter(
-    (a) => a.dayOffset > 0 || nowTime === null || a.start >= nowTime,
-  );
+/** Activities of one calendar day, already ordered by time. */
+export function getActivitiesOn(activities: Activity[], date: string | null): Activity[] {
+  if (!date) return [];
+  return sortActivities(activities.filter((activity) => activity.date === date));
+}
+
+export interface ActivityGroup {
+  date: string;
+  activities: Activity[];
+}
+
+/** Groups by day, chronological. Used by the dashboard list. */
+export function groupActivitiesByDate(activities: Activity[]): ActivityGroup[] {
+  const byDate = new Map<string, Activity[]>();
+  for (const activity of sortActivities(activities)) {
+    const list = byDate.get(activity.date);
+    if (list) list.push(activity);
+    else byDate.set(activity.date, [activity]);
+  }
+  return [...byDate.entries()].map(([date, list]) => ({ date, activities: list }));
+}
+
+/**
+ * Activities that have not finished yet: everything from tomorrow on, plus
+ * today's ones that still have time left. `nowTime` is "HH:mm" or null while
+ * the client clock is unknown.
+ */
+export function getUpcomingActivities(
+  activities: Activity[],
+  todayISO: string | null,
+  nowTime: string | null,
+): Activity[] {
+  const sorted = sortActivities(activities);
+  if (!todayISO) return sorted;
+
+  return sorted.filter((activity) => {
+    if (activity.date !== todayISO) return activity.date > todayISO;
+    if (nowTime === null) return true;
+    return (activity.end ?? activity.start) >= nowTime;
+  });
 }
 
 export function sortNotes(notes: Note[]): Note[] {
@@ -118,6 +163,20 @@ export function applyTaskPatch(task: Task, patch: TaskPatch): Task {
     time: patch.time !== undefined ? patch.time : task.time,
     completed: patch.completed ?? task.completed,
     completedAt: patch.completedAt !== undefined ? patch.completedAt : task.completedAt,
+    updatedAt: Date.now(),
+  };
+}
+
+/** Same contract as `applyTaskPatch`, for activities. */
+export function applyActivityPatch(activity: Activity, patch: ActivityPatch): Activity {
+  return {
+    ...activity,
+    title: patch.title ?? activity.title,
+    category: patch.category ?? activity.category,
+    date: patch.date ?? activity.date,
+    start: patch.start ?? activity.start,
+    end: patch.end === undefined ? activity.end : (patch.end ?? undefined),
+    location: patch.location === undefined ? activity.location : (patch.location ?? undefined),
     updatedAt: Date.now(),
   };
 }

@@ -11,6 +11,7 @@ export const STORAGE_VERSION = 1;
 export const STORAGE_KEYS = {
   tasks: "orgadia:v1:tasks",
   notes: "orgadia:v1:notes",
+  activities: "orgadia:v1:activities",
 } as const;
 
 export interface StoredCollection<T> {

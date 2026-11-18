@@ -103,15 +103,16 @@ dia-en-orden/
     │   ├── ui/                ← kit shadcn (no editar salvo necesidad)
     │   ├── layout/            ← sidebar, nav móvil, AppShell, avatar
     │   ├── dashboard/         ← resumen del día, próximas, notas rápidas
-    │   ├── tasks/             ← task-dialog, task-date-picker, task-item, task-list, task-check
+    │   ├── tasks/             ← task-dialog, task-item, task-list, task-check
     │   ├── notes/             ← note-card, note-composer
-    │   ├── agenda/            ← activity-timeline
-    │   └── common/            ← chip, section-card, page-header, empty-state
+    │   ├── activities/        ← activity-list (filas editables), activity-dialog
+    │   ├── agenda/            ← agenda-toolbar + day-view, week-view, month-view
+    │   └── common/            ← chip, section-card, page-header, empty-state, date-picker-field
     ├── config/                ← categorías, prioridades, tipos de nota, navegación
     ├── data/                  ← sample-data.ts (semilla del primer arranque)
     ├── hooks/                 ← useToday, useMobile
-    ├── lib/                   ← dates.ts, planner.ts, user.ts, utils.ts, errores
-    ├── services/              ← planner-storage, tasks-repository, notes-repository, supabase-client, auth-errors
+    ├── lib/                   ← dates.ts, time.ts, planner.ts, user.ts, utils.ts, errores
+    ├── services/              ← planner-storage, *-repository (tasks/notes/activities), supabase-client, auth-errors
     ├── store/                 ← planner-store.tsx, auth-store.tsx
     ├── test/                  ← setup + tests
     ├── types/                 ← planner.ts (tipos del dominio)
@@ -152,13 +153,18 @@ Reglas de arquitectura:
 - Crear (idea / por hacer / recordatorio), fijar, eliminar, convertir en tarea.
 - Filtros por tipo en `/notas`.
 
-### Agenda
-- Vista de 7 días con actividades (datos de ejemplo) y tareas por día.
-- Sincronizada con las fechas reales de las tareas.
+### Agenda (Parte 6, completa en local)
+- Tres vistas conmutables: **Día**, **Semana** (por defecto) y **Mes**.
+- Navegación anterior/siguiente según la vista, más "Hoy" para volver.
+- Pulsar un día en semana o mes abre la vista de día de esa fecha.
+- **CRUD completo de actividades**: título, día, hora inicio/fin, lugar y categoría,
+  con diálogo único para crear y editar (`ActivityDialog`) y borrado inmediato.
+- Validación: el fin debe ser posterior al inicio; las horas son `HH:mm`.
+- El dashboard (`next-up-card`, `upcoming-activities`) lee actividades reales.
 
 ### Persistencia
-- Tareas y notas se guardan en `localStorage` con claves versionadas
-  (`orgadia:v1:tasks`, `orgadia:v1:notes`).
+- Tareas, notas y actividades se guardan en `localStorage` con claves versionadas
+  (`orgadia:v1:tasks`, `orgadia:v1:notes`, `orgadia:v1:activities`).
 - Semilla de datos demo **solo la primera vez**; si se borra todo, no reaparecen.
 - Migración automática de datos antiguos con `dayOffset`.
 - Actualización optimista con rollback y aviso si el guardado falla.
@@ -196,8 +202,8 @@ Reglas de arquitectura:
 - Tipado de `import.meta.env` en `src/env.d.ts`.
 
 ### Calidad
-- 34 tests en 7 archivos (fechas, agrupación, repositorios, store/persistencia, rutas,
-  configuración de Supabase, autenticación).
+- 48 tests en 7 archivos (fechas y calendario, agrupación de tareas y actividades,
+  repositorios, store/persistencia, rutas, configuración de Supabase, autenticación).
 - `npm run build` y `npx tsc --noEmit` en verde.
 - SSR verificado: `/` y `/tareas` sirven el splash, `/acceso` sirve el formulario;
   todos responden 200.
@@ -217,6 +223,10 @@ _(Ver el plan de 11 partes acordado con el usuario.)_
 ✅ **Parte 2 — Autenticación: completada.** `/acceso`, sesión persistente, rutas
 privadas y perfil derivado del email (la tabla `profiles` llega en la Parte 3).
 
+✅ **Parte 6 — Agenda: completada en local.** Actividades con fecha real y CRUD
+completo, vistas Día/Semana/Mes y persistencia en el navegador. Se adelantó a la
+Parte 3 porque el usuario la pidió antes.
+
 Las siguientes partes:
 
 1. **Parte 3 — Esquema y RLS:** tablas `profiles`, `tasks`, `notes`, `activities`,
@@ -224,8 +234,8 @@ Las siguientes partes:
 2. **Parte 4 — Tareas en servidor:** repositorio Supabase, TanStack Query, importación
    de los datos locales, sincronización entre dispositivos.
 3. **Parte 5 — Notas:** editar, buscar, filtros y persistencia en servidor.
-4. **Parte 6 — Agenda real:** CRUD de actividades, fechas/horas reales, navegación
-   entre semanas (hoy son de solo lectura con `dayOffset`).
+4. **Parte 6 — Agenda real:** ✅ hecha en local; solo falta el repositorio Supabase
+   (va con la Parte 4).
 5. **Parte 7 — PWA:** instalable, service worker, offline y cola de escrituras.
 6. **Parte 8 — Recordatorios:** hora de aviso, Web Push y función programada
    (iOS requiere PWA instalada; valorar Capacitor más adelante).
@@ -250,8 +260,10 @@ históricas, adjuntos.
 | 2026-11 | **PWA primero**, Capacitor solo si hace falta App Store/push iOS fiable | Un único código para PC, iOS y Android |
 | 2026-11 | Patrón **repositorio** con interfaz `list/create/update/remove` | Cambiar localStorage → Supabase sin tocar la UI |
 | 2026-11 | Fechas de tarea como **string `YYYY-MM-DD` local** | Evitar desplazamientos por zona horaria y permitir que "envejezcan" |
-| 2026-11 | `dayOffset` **eliminado de `Task`** (se mantiene en `Activity` hasta la Parte 6) | Una sola fuente de verdad |
-| 2026-11 | Un **único `TaskDialog`** para crear y editar | Evitar duplicar formularios |
+| 2026-11 | `dayOffset` **eliminado de `Task` y de `Activity`**; todo usa fecha real `YYYY-MM-DD` | Una sola fuente de verdad y datos que envejecen solos |
+| 2026-11 | Un **único `TaskDialog`** y un **único `ActivityDialog`** para crear y editar | Evitar duplicar formularios |
+| 2026-11 | Agenda con `anchor` (fecha visible) y vistas Día/Semana/Mes sobre helpers de `dates.ts` | Cambiar de vista no pierde el día; toda la lógica de calendario en un módulo testeable |
+| 2026-11 | En la agenda, las vistas Semana/Mes son un **preview** y pulsar un día abre la vista Día | Menos ruido en móvil y un único sitio donde se edita |
 | 2026-11 | **Semilla demo solo en el primer arranque** | Evitar que reaparezcan tareas borradas |
 | 2026-11 | Lectura de almacenamiento solo en `useEffect` + flag `isReady` | Evitar hydration mismatch en SSR |
 | 2026-11 | Actualización **optimista** con recarga en caso de error | UI instantánea y sin mentir sobre lo guardado |
@@ -269,7 +281,8 @@ históricas, adjuntos.
 ## 7. Estado actual
 
 ### Frontend
-- ✅ Terminado y funcional para Tareas, Notas (parcial) y Agenda (solo lectura).
+- ✅ Terminado y funcional para Tareas, Notas (parcial) y Agenda (Día/Semana/Mes con
+  CRUD de actividades).
 - ✅ Responsive en los tres formatos; verificado por SSR + revisión de clases.
 - ⚠️ Pendiente una revisión visual manual en dispositivos reales.
 
@@ -283,8 +296,8 @@ históricas, adjuntos.
   `src/router.tsx`. No hay endpoints ni *server functions* en uso.
 - ✅ **Parte 2 completada:** autenticación por email y contraseña, sesión persistente
   en el dispositivo y rutas privadas (`AuthGate`).
-- ❌ Sin consultas a datos todavía: las tareas y notas siguen en `localStorage`
-  (Parte 4).
+- ❌ Sin consultas a datos todavía: tareas, notas y actividades siguen en
+  `localStorage` (Parte 4).
 
 ### Base de datos
 - ✅ Proyecto de Supabase creado (región UE) y accesible: el endpoint REST responde
@@ -315,10 +328,11 @@ históricas, adjuntos.
 3. ~~**Nombre de la app.**~~ ✅ Resuelto: la marca, los títulos de página y el
    favicon pendiente dicen **Orgadia** (el manifest llega en la Parte 7). Se mantiene
    la frase "Empecemos con calma" como texto, no como marca.
-4. **`next-up-card` y `upcoming-activities` siguen 100 % con datos de ejemplo**
-   (no dependen de tareas). Se resolverá con la Parte 6.
+4. ~~**`next-up-card` y `upcoming-activities` con datos de ejemplo**~~ ✅ Resuelto en
+   la Parte 6: leen actividades reales del store.
 5. **Notas:** no se pueden editar ni buscar; no hay persistencia remota.
-6. **Agenda:** actividades de solo lectura, sin crear/editar/borrar ni cambiar de semana.
+6. ~~**Agenda:** actividades de solo lectura.~~ ✅ Resuelto en la Parte 6: CRUD
+   completo y vistas Día/Semana/Mes. Falta solo la persistencia en servidor.
 7. Avisos del build/lint a vigilar (no bloquean): `__dirname` en `vitest.config.ts`
    (Vite sugiere `import.meta.dirname`) y recomendación de usar `resolve.tsconfigPaths`
    nativo en lugar del plugin `vite-tsconfig-paths`.
@@ -402,11 +416,12 @@ Después de esta parte: **Parte 4 — Tareas en servidor**.
 | Parte | Estado | Commit |
 |---|---|---|
 | 1 — Conexión del backend (Supabase) | ✅ completada | `44fba8e` |
-| 2 — Autenticación y perfiles | ✅ completada | ver `git log` |
+| 2 — Autenticación y perfiles | ✅ completada | `88fadbb` |
+| Marca Orgadia + nickname | ✅ completada | `829f326` |
+| 6 — Agenda real (en local) | ✅ completada | ver `git log` |
 | 3 — Esquema y RLS | ⏳ siguiente | — |
 | 4 — Tareas en servidor | ⏳ pendiente | — |
 | 5 — Notas completas | ⏳ pendiente | — |
-| 6 — Agenda real | ⏳ pendiente | — |
 | 7 — PWA y offline | ⏳ pendiente | — |
 | 8 — Recordatorios | ⏳ pendiente | — |
 | 9 — Ajustes y datos | ⏳ pendiente | — |

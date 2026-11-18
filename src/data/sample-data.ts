@@ -1,6 +1,6 @@
 import type { Activity, Note, Task } from "@/types/planner";
 import type { CategoryId, Priority } from "@/types/planner";
-import { isoFromOffset } from "@/lib/dates";
+import { isoFromOffset, toISODate } from "@/lib/dates";
 
 /** Example data for the first run. Replace with real data sources later. */
 
@@ -49,17 +49,44 @@ export function createSampleTasks(today: Date): Task[] {
   }));
 }
 
-export const sampleActivities: Activity[] = [
-  { id: "a1", title: "Reunión semanal del equipo", category: "trabajo", dayOffset: 0, start: "10:00", end: "11:00", location: "Sala Norte" },
-  { id: "a2", title: "Comida con Laura", category: "personal", dayOffset: 0, start: "14:00", end: "15:30", location: "Café Central" },
-  { id: "a3", title: "Clase de yoga", category: "salud", dayOffset: 0, start: "19:00", end: "20:00", location: "Estudio Om" },
-  { id: "a4", title: "Cita con el dentista", category: "salud", dayOffset: 1, start: "09:30", end: "10:15", location: "Clínica Sonrisa" },
-  { id: "a5", title: "Revisión de sprint", category: "trabajo", dayOffset: 1, start: "16:00", end: "17:00", location: "Videollamada" },
-  { id: "a6", title: "Cumpleaños de Carlos", category: "personal", dayOffset: 2, start: "21:00", location: "Casa de Carlos" },
-  { id: "a7", title: "Recoger paquete", category: "hogar", dayOffset: 3, start: "11:00", location: "Oficina de correos" },
-  { id: "a8", title: "Taller de cerámica", category: "personal", dayOffset: 5, start: "18:00", end: "20:00", location: "Barro Studio" },
-  { id: "a9", title: "Revisión anual médica", category: "salud", dayOffset: 6, start: "08:45", location: "Centro de salud" },
+interface ActivitySeed {
+  title: string;
+  category: CategoryId;
+  /** Days from today, converted to a real date when seeded. */
+  offset: number;
+  start: string;
+  end?: string;
+  location?: string;
+}
+
+const SAMPLE_ACTIVITY_SEEDS: ActivitySeed[] = [
+  { title: "Reunión semanal del equipo", category: "trabajo", offset: 0, start: "10:00", end: "11:00", location: "Sala Norte" },
+  { title: "Comida con Laura", category: "personal", offset: 0, start: "14:00", end: "15:30", location: "Café Central" },
+  { title: "Clase de yoga", category: "salud", offset: 0, start: "19:00", end: "20:00", location: "Estudio Om" },
+  { title: "Cita con el dentista", category: "salud", offset: 1, start: "09:30", end: "10:15", location: "Clínica Sonrisa" },
+  { title: "Revisión de sprint", category: "trabajo", offset: 1, start: "16:00", end: "17:00", location: "Videollamada" },
+  { title: "Cumpleaños de Carlos", category: "personal", offset: 2, start: "21:00", location: "Casa de Carlos" },
+  { title: "Recoger paquete", category: "hogar", offset: 3, start: "11:00", location: "Oficina de correos" },
+  { title: "Taller de cerámica", category: "personal", offset: 5, start: "18:00", end: "20:00", location: "Barro Studio" },
+  { title: "Revisión anual médica", category: "salud", offset: 6, start: "08:45", location: "Centro de salud" },
 ];
+
+/** Builds the demo activities with real dates, so they age like any other day. */
+export function createSampleActivities(today: Date): Activity[] {
+  const now = Date.now();
+  return SAMPLE_ACTIVITY_SEEDS.map((seed, index) => ({
+    id: `a${index + 1}`,
+    title: seed.title,
+    category: seed.category,
+    date: isoFromOffset(seed.offset, today) ?? toISODate(today),
+    start: seed.start,
+    end: seed.end,
+    location: seed.location,
+    // Staggered so the seeded order stays stable before any edit.
+    createdAt: now - (SAMPLE_ACTIVITY_SEEDS.length - index) * 60_000,
+    updatedAt: now,
+  }));
+}
 
 const now = 1_700_000_000_000;
 const hour = 3_600_000;

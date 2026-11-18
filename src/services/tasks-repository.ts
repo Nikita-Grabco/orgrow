@@ -2,6 +2,7 @@ import { CATEGORY_IDS, PRIORITY_IDS } from "@/config/categories";
 import { createSampleTasks } from "@/data/sample-data";
 import { isoFromOffset, isValidISODate } from "@/lib/dates";
 import { createId } from "@/lib/planner";
+import { readTime } from "@/lib/time";
 import { loadCollection, saveCollection, STORAGE_KEYS } from "@/services/planner-storage";
 import type { Task } from "@/types/planner";
 
@@ -18,11 +19,6 @@ export interface TasksRepository {
 }
 
 const STORAGE_KEY = STORAGE_KEYS.tasks;
-const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-function readTime(value: unknown): string | undefined {
-  return typeof value === "string" && TIME_PATTERN.test(value) ? value : undefined;
-}
 
 /** Accepts the legacy frontend-only shape (`dayOffset`) so old data never crashes. */
 function readDueDate(raw: Record<string, unknown>): string | null {
