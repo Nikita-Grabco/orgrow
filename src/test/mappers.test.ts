@@ -294,3 +294,53 @@ describe("registros de hábito", () => {
     });
   });
 });
+
+describe("recordatorios", () => {
+  it("distingue 'sin aviso' (null) de 'el servidor no tiene la columna' (undefined)", () => {
+    expect(taskFromRow({ ...TASK_ROW, remind_before_minutes: 60 }).remindBefore).toBe(60);
+    expect(taskFromRow({ ...TASK_ROW, remind_before_minutes: null }).remindBefore).toBeNull();
+    expect(taskFromRow(TASK_ROW).remindBefore).toBeUndefined();
+  });
+
+  it("al crear solo envía la columna cuando hay aviso (compatible con un servidor sin ella)", () => {
+    const input = { title: "x", category: "hogar" as const, priority: "baja" as const, dueDate: null };
+    expect(taskToInsert({ ...input, remindBefore: 10 })).toMatchObject({ remind_before_minutes: 10 });
+    expect(taskToInsert({ ...input, remindBefore: 0 })).toMatchObject({ remind_before_minutes: 0 });
+    expect(taskToInsert({ ...input, remindBefore: null })).not.toHaveProperty("remind_before_minutes");
+    expect(taskToInsert(input)).not.toHaveProperty("remind_before_minutes");
+  });
+
+  it("al editar, null quita el aviso y undefined no lo toca", () => {
+    expect(taskToUpdate({ remindBefore: null })).toEqual({ remind_before_minutes: null });
+    expect(taskToUpdate({ remindBefore: 60 })).toEqual({ remind_before_minutes: 60 });
+    expect(taskToUpdate({ title: "a" })).not.toHaveProperty("remind_before_minutes");
+  });
+
+  it("las actividades funcionan igual", () => {
+    const row = {
+      id: "a1",
+      title: "Reunión",
+      category: "trabajo" as const,
+      date: "2026-11-26",
+      start_time: "10:00:00",
+      end_time: null,
+      location: null,
+      remind_before_minutes: 10,
+      created_at: "2026-11-20T08:00:00.000Z",
+      updated_at: "2026-11-20T08:00:00.000Z",
+    };
+    expect(activityFromRow(row).remindBefore).toBe(10);
+    expect(activityToUpdate({ remindBefore: null })).toEqual({ remind_before_minutes: null });
+
+    const insert = activityToInsert({
+      title: "Reunión",
+      category: "trabajo",
+      date: "2026-11-26",
+      start: "10:00",
+      end: undefined,
+      location: undefined,
+      remindBefore: null,
+    });
+    expect(insert).not.toHaveProperty("remind_before_minutes");
+  });
+});

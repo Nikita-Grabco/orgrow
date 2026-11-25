@@ -138,6 +138,8 @@ export function createSupabaseTasksRepository(client: SupabaseClient): TasksRepo
             time: task.time,
             completed: task.completed,
             completedAt: task.completedAt ?? null,
+            // `undefined` = el servidor aún no tiene la columna: no se envía.
+            remindBefore: task.remindBefore,
           }),
         )
         .eq("id", task.id)
@@ -219,6 +221,7 @@ export function createSupabaseActivitiesRepository(client: SupabaseClient): Acti
             start: activity.start,
             end: activity.end ?? null,
             location: activity.location ?? null,
+            remindBefore: activity.remindBefore,
           }),
         )
         .eq("id", activity.id)

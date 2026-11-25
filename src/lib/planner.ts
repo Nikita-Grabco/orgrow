@@ -200,6 +200,7 @@ export function applyTaskPatch(task: Task, patch: TaskPatch): Task {
     priority: patch.priority ?? task.priority,
     dueDate: patch.dueDate !== undefined ? patch.dueDate : task.dueDate,
     time: patch.time !== undefined ? patch.time : task.time,
+    remindBefore: patch.remindBefore !== undefined ? patch.remindBefore : task.remindBefore,
     completed: patch.completed ?? task.completed,
     completedAt: patch.completedAt !== undefined ? patch.completedAt : task.completedAt,
     updatedAt: Date.now(),
@@ -216,6 +217,8 @@ export function applyActivityPatch(activity: Activity, patch: ActivityPatch): Ac
     start: patch.start ?? activity.start,
     end: patch.end === undefined ? activity.end : (patch.end ?? undefined),
     location: patch.location === undefined ? activity.location : (patch.location ?? undefined),
+    remindBefore:
+      patch.remindBefore !== undefined ? patch.remindBefore : activity.remindBefore,
     updatedAt: Date.now(),
   };
 }

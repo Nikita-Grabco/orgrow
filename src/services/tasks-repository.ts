@@ -2,6 +2,7 @@ import { CATEGORY_IDS, PRIORITY_IDS } from "@/config/categories";
 import { createSampleTasks } from "@/data/sample-data";
 import { isoFromOffset, isValidISODate } from "@/lib/dates";
 import { createId } from "@/lib/planner";
+import { readRemindBefore } from "@/lib/reminders";
 import { readTime } from "@/lib/time";
 import { loadCollection, saveCollection, STORAGE_KEYS } from "@/services/planner-storage";
 import type { Task } from "@/types/planner";
@@ -53,6 +54,7 @@ function normalizeTask(value: unknown, now: number): Task | null {
     dueDate: readDueDate(raw),
     time: readTime(raw["time"]),
     completed: raw["completed"] === true,
+    remindBefore: readRemindBefore(raw["remindBefore"]),
     completedAt: typeof raw["completedAt"] === "number" ? raw["completedAt"] : null,
     createdAt: typeof raw["createdAt"] === "number" ? raw["createdAt"] : now,
     updatedAt: typeof raw["updatedAt"] === "number" ? raw["updatedAt"] : now,

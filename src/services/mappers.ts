@@ -54,6 +54,8 @@ export interface TaskRow {
   due_time: string | null;
   completed: boolean;
   completed_at: string | null;
+  /** Ausente mientras no se aplique `docs/supabase-reminders.sql`. */
+  remind_before_minutes?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -74,6 +76,7 @@ export interface ActivityRow {
   start_time: string;
   end_time: string | null;
   location: string | null;
+  remind_before_minutes?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -130,6 +133,14 @@ export function millisToDb(value: number): string {
 
 const numberFromDb = (value: number | string): number => Number(value);
 
+/**
+ * Al crear solo se envía la columna cuando hay aviso: sin él no hace falta, y así
+ * la app sigue guardando aunque `docs/supabase-reminders.sql` no se haya aplicado.
+ */
+function reminderToInsert(minutes: number | null | undefined): number | undefined {
+  return typeof minutes === "number" ? minutes : undefined;
+}
+
 /** Quita las claves con valor `undefined` para no enviar columnas que no cambian. */
 function defined<T extends Record<string, unknown>>(values: T): Partial<T> {
   return Object.fromEntries(
@@ -158,6 +169,8 @@ export function taskFromRow(row: TaskRow): Task {
     dueDate: row.due_date,
     time: timeFromDb(row.due_time),
     completed: row.completed,
+    // `undefined` (columna inexistente) se distingue de `null` (sin aviso).
+    remindBefore: row.remind_before_minutes,
     completedAt: row.completed_at ? millisFromDb(row.completed_at) : null,
     createdAt: millisFromDb(row.created_at),
     updatedAt: millisFromDb(row.updated_at),
@@ -173,6 +186,7 @@ export function taskToInsert(input: NewTaskInput, id?: string) {
     priority: input.priority,
     due_date: input.dueDate,
     due_time: input.time ?? null,
+    remind_before_minutes: reminderToInsert(input.remindBefore),
   });
 }
 
@@ -184,6 +198,7 @@ export function taskToUpdate(patch: TaskPatch) {
     due_date: patch.dueDate,
     // `undefined` = sin cambios; la UI limpia la hora con `null` en la fila.
     due_time: "time" in patch ? (patch.time ?? null) : undefined,
+    remind_before_minutes: patch.remindBefore,
     completed: patch.completed,
     completed_at:
       patch.completedAt === undefined
@@ -229,6 +244,7 @@ export function activityFromRow(row: ActivityRow): Activity {
     start: row.start_time.slice(0, 5),
     end: timeFromDb(row.end_time),
     location: row.location ?? undefined,
+    remindBefore: row.remind_before_minutes,
     createdAt: millisFromDb(row.created_at),
     updatedAt: millisFromDb(row.updated_at),
   };
@@ -243,6 +259,7 @@ export function activityToInsert(input: NewActivityInput, id?: string) {
     start_time: input.start,
     end_time: input.end ?? null,
     location: input.location ?? null,
+    remind_before_minutes: reminderToInsert(input.remindBefore),
   });
 }
 
@@ -255,6 +272,7 @@ export function activityToUpdate(patch: ActivityPatch) {
     // `null` limpia el valor opcional; `undefined` no lo toca.
     end_time: patch.end,
     location: patch.location,
+    remind_before_minutes: patch.remindBefore,
   });
 }
 

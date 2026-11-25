@@ -18,6 +18,12 @@ export interface Task {
   /** Optional "HH:mm" time. */
   time?: string | undefined;
   completed: boolean;
+  /**
+   * Minutes before the due moment to send a push reminder (0 = at the time).
+   * `null` = no reminder; `undefined` = the backend has no reminder column yet.
+   * The server computes the exact instant from the date, time and profile time zone.
+   */
+  remindBefore?: number | null | undefined;
   /** Epoch millis of the completion, used for daily metrics. */
   completedAt?: number | null | undefined;
   createdAt: number;
@@ -38,6 +44,8 @@ export interface Activity {
   /** "HH:mm" end time, optional. */
   end?: string | undefined;
   location?: string | undefined;
+  /** Minutes before `start` to send a push reminder. Same meaning as `Task.remindBefore`. */
+  remindBefore?: number | null | undefined;
   createdAt: number;
   updatedAt: number;
 }
@@ -56,11 +64,24 @@ export interface UserProfile {
   initials: string;
 }
 
-export type NewTaskInput = Pick<Task, "title" | "category" | "priority" | "dueDate" | "time">;
+export type NewTaskInput = Pick<
+  Task,
+  "title" | "category" | "priority" | "dueDate" | "time" | "remindBefore"
+>;
 
 /** Fields the UI may change on an existing task. */
 export type TaskPatch = Partial<
-  Pick<Task, "title" | "category" | "priority" | "dueDate" | "time" | "completed" | "completedAt">
+  Pick<
+    Task,
+    | "title"
+    | "category"
+    | "priority"
+    | "dueDate"
+    | "time"
+    | "completed"
+    | "completedAt"
+    | "remindBefore"
+  >
 >;
 
 export type NewNoteInput = Pick<Note, "content" | "kind">;
@@ -69,7 +90,7 @@ export type NotePatch = Partial<Pick<Note, "content" | "kind" | "pinned">>;
 
 export type NewActivityInput = Pick<
   Activity,
-  "title" | "category" | "date" | "start" | "end" | "location"
+  "title" | "category" | "date" | "start" | "end" | "location" | "remindBefore"
 >;
 
 /** Fields the UI may change on an existing activity. */
@@ -79,6 +100,8 @@ export type ActivityPatch = Partial<
   /** `null` clears the optional value; `undefined` leaves it untouched. */
   end?: string | null | undefined;
   location?: string | null | undefined;
+  /** `null` removes the reminder; `undefined` leaves it untouched. */
+  remindBefore?: number | null | undefined;
 };
 
 /* -------------------------------------------------------------------------- */

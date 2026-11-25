@@ -2,6 +2,7 @@ import { CATEGORY_IDS } from "@/config/categories";
 import { createSampleActivities } from "@/data/sample-data";
 import { isoFromOffset, isValidISODate } from "@/lib/dates";
 import { createId } from "@/lib/planner";
+import { readRemindBefore } from "@/lib/reminders";
 import { readTime } from "@/lib/time";
 import { loadCollection, saveCollection, STORAGE_KEYS } from "@/services/planner-storage";
 import type { Activity } from "@/types/planner";
@@ -54,6 +55,7 @@ function normalizeActivity(value: unknown, now: number): Activity | null {
       typeof raw["location"] === "string" && raw["location"].trim()
         ? raw["location"].trim()
         : undefined,
+    remindBefore: readRemindBefore(raw["remindBefore"]),
     createdAt: typeof raw["createdAt"] === "number" ? raw["createdAt"] : now,
     updatedAt: typeof raw["updatedAt"] === "number" ? raw["updatedAt"] : now,
   };
