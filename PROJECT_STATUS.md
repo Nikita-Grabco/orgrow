@@ -3,7 +3,7 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-26 (Parte 7 implementada)
+Última actualización: 2026-11-26 (Parte 8 implementada)
 Commit de referencia: ver `git log` (rama `main`)
 Rama: `main`
 
@@ -218,6 +218,26 @@ Reglas de arquitectura:
   sin enviar (se envían al volver a entrar con la misma cuenta).
 - `ConnectionBanner` (en `AppShell`) avisa de "Sin conexión" y de los cambios pendientes.
 
+### Recordatorios (Parte 8)
+
+- **Qué guarda cada tarea/actividad:** solo `remindBefore` (minutos antes: 0, 10, 60, 1440 o
+  ninguno). La base de datos calcula el instante exacto (`remind_at`) con fecha, hora y la
+  zona horaria del perfil (correcto con el cambio de hora; sin hora → 09:00). Ver
+  `docs/supabase-reminders.sql`.
+- **Navegador:** `src/lib/push.ts` (estados y claves, puro), `src/services/push-service.ts`
+  (permiso, suscripción, RPC `register_push_subscription`), `usePushNotifications`,
+  `NotificationsCard` (dashboard) y `ReminderField` ("Avisarme") en los diálogos de tarea y
+  actividad. Todo queda oculto si falta `VITE_VAPID_PUBLIC_KEY`. En iPhone/iPad exige app instalada.
+- **Service worker:** manejadores `push` (siempre muestra notificación; solo rutas internas) y
+  `notificationclick` (enfoca o abre la app).
+- **Servidor:** `docs/supabase-functions/send-reminders/` (Edge Function + `logic.ts` probado).
+  Reclama cada aviso antes de enviarlo (una sola vez), reintenta fallos pasajeros, borra
+  suscripciones muertas y descarta avisos con más de 24 h de retraso. Autenticada por
+  `x-cron-secret`; la lanza pg_cron cada minuto.
+- Cerrar sesión da de baja los avisos del dispositivo. Claves con `node scripts/generate-vapid-keys.mjs`.
+- **Puesta en marcha (la hace el usuario):** `docs/recordatorios-setup.md`. No se pudo probar
+  la entrega real de push desde aquí.
+
 ### Backend (Parte 1)
 
 - Cliente único de Supabase en `src/services/supabase-client.ts`, creado de forma
@@ -267,8 +287,9 @@ Las siguientes partes:
    (va con la Parte 4).
 5. **Parte 7 — PWA:** ✅ implementada (instalable, service worker, copia local y cola de
    escrituras sin conexión). Pendiente solo la **prueba manual en dispositivos reales**.
-6. **Parte 8 — Recordatorios:** hora de aviso, Web Push y función programada
-   (iOS requiere PWA instalada; valorar Capacitor más adelante).
+6. **Parte 8 — Recordatorios:** ✅ implementada (código, función y guía). Pendiente que el
+   usuario aplique el SQL, cree claves, despliegue la función y pruebe en dispositivos
+   (`docs/recordatorios-setup.md`). iOS requiere PWA instalada.
 7. **Parte 9 — Ajustes:** perfil, zona horaria, exportar/importar JSON, categorías
    propias, borrado de cuenta.
 8. **Parte 10 — Calidad/seguridad:** validación con `zod` en servidor, tests de RLS,
@@ -424,19 +445,22 @@ Los valores **no se guardan en el repositorio**. Se declaran en `.env.local`
 ```
 VITE_SUPABASE_URL=
 VITE_SUPABASE_PUBLISHABLE_KEY=
+VITE_VAPID_PUBLIC_KEY=   # opcional: solo la clave PÚBLICA de los avisos push
 ```
 
 - Se usa el nombre **publishable** porque Supabase ya no emite `anon` clásicas para
   proyectos nuevos; esta clave es pública por diseño y el acceso lo limita RLS.
 - La *service role / secret key* **nunca** debe estar en código de navegador ni en el
   repositorio.
-- Tipado de las dos variables en `src/env.d.ts`.
+- La clave **privada** VAPID y `CRON_SECRET` viven solo como secretos de Supabase.
+- Tipado de las variables en `src/env.d.ts`.
 
 ---
 
 ## 10. Siguiente paso exacto
 
-**Cerrar las Partes 4, 5 y 7 con pruebas manuales**, y después la **Parte 8 — Recordatorios**.
+**Cerrar las Partes 4, 5, 7 y 8 con pruebas manuales** y después la **Parte 9 — Ajustes**.
+Para la Parte 8, seguir `docs/recordatorios-setup.md` (SQL, claves, función, cron, prueba).
 
 Prueba manual (hace falta una cuenta real confirmada):
 
@@ -461,6 +485,8 @@ Prueba manual de la PWA (solo en el despliegue, con HTTPS; el service worker no 
 11. Con la app cerrada más de una hora y sin red, abrirla: no debe pedir iniciar sesión.
 12. Cerrar sesión: en `localStorage` desaparece `orgrow:v1:cache:<id>`.
 
+Prueba manual de recordatorios: ver el apartado 6 de `docs/recordatorios-setup.md`.
+
 Antes de subir a internet: `npm audit`, `npm run build` y revisar que `git status` no
 muestra `.env*` (solo `.env.example`).
 
@@ -478,7 +504,7 @@ muestra `.env*` (solo `.env.example`).
 | 4 — Datos en servidor | ✅ implementada, falta prueba manual | ver `git log` |
 | 5 — Notas completas | ✅ completada | ver `git log` |
 | 7 — PWA y offline | ✅ implementada, falta prueba en dispositivos | ver `git log` |
-| 8 — Recordatorios | ⏳ pendiente | — |
+| 8 — Recordatorios | ✅ implementada, falta puesta en marcha y prueba | ver `git log` |
 | 9 — Ajustes y datos | ⏳ pendiente | — |
 | 10 — Calidad y seguridad | ⏳ pendiente | — |
 | 11 — Producción | ⏳ pendiente | — |
