@@ -67,6 +67,8 @@ interface PlannerContextValue {
   notes: Note[];
   /** False until saved data has been hydrated from the browser. */
   isReady: boolean;
+  /** Vuelve a leer todos los datos (p. ej. tras importar una copia de seguridad). */
+  reloadData: () => Promise<void>;
 
   toggleTask: (id: string) => void;
   addTask: (input: NewTaskInput) => void;
@@ -554,6 +556,7 @@ export function PlannerProvider({
       habits,
       habitLogs,
       isReady,
+      reloadData: reload,
       toggleTask,
       addTask,
       editTask,
@@ -590,6 +593,7 @@ export function PlannerProvider({
       habits,
       habitLogs,
       isReady,
+      reload,
       toggleTask,
       addTask,
       editTask,

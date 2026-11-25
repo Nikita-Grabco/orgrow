@@ -136,6 +136,18 @@ export function clearOfflineCache(userId: string, storage: Storage | null = defa
   }
 }
 
+/** Borra TODO lo de esta cuenta en el dispositivo, incluida la cola pendiente (al borrar la cuenta). */
+export function clearAllLocalData(userId: string, storage: Storage | null = defaultStorage()): void {
+  try {
+    const keys = offlineKeys(userId);
+    storage?.removeItem(keys.cache);
+    storage?.removeItem(keys.outbox);
+    storage?.removeItem(`orgrow:v1:imported:${userId}`);
+  } catch (error) {
+    console.error("[orgrow] No se pudieron borrar los datos locales", error);
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* Motor                                                                      */
 /* -------------------------------------------------------------------------- */

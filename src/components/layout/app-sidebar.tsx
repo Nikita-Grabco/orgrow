@@ -44,11 +44,18 @@ export function AppSidebar() {
       </div>
 
       <div className="mt-auto flex items-center justify-center gap-3 rounded-2xl lg:justify-start lg:border lg:border-sidebar-border lg:bg-card lg:p-3">
-        <UserAvatar />
-        <div className="hidden min-w-0 flex-1 lg:block">
-          <p className="truncate text-sm font-bold text-foreground">{displayName}</p>
-          <p className="truncate text-xs text-muted-foreground">Organización personal</p>
-        </div>
+        <Link
+          to="/ajustes"
+          title="Ajustes"
+          aria-label="Ajustes"
+          className="flex min-w-0 flex-1 items-center justify-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:justify-start"
+        >
+          <UserAvatar />
+          <div className="hidden min-w-0 flex-1 lg:block">
+            <p className="truncate text-sm font-bold text-foreground">{displayName}</p>
+            <p className="truncate text-xs text-muted-foreground">Ajustes</p>
+          </div>
+        </Link>
         <SignOutButton />
       </div>
     </aside>

@@ -12,9 +12,14 @@ import {
 import { initialsFromName, resolveDisplayName } from "@/lib/user";
 import { translateAuthError } from "@/services/auth-errors";
 import type { Profile } from "@/services/mappers";
-import { clearOfflineCache, isRetryableError } from "@/services/offline-repositories";
+import { clearAllLocalData, clearOfflineCache, isRetryableError } from "@/services/offline-repositories";
 import { readStoredSession } from "@/services/offline-session";
-import { fetchOwnProfile } from "@/services/profile-repository";
+import {
+  deleteOwnAccount,
+  fetchOwnProfile,
+  updateOwnProfile,
+  type ProfileChanges,
+} from "@/services/profile-repository";
 import { disablePush } from "@/services/push-service";
 import { getSupabaseClient, isSupabaseConfigured } from "@/services/supabase-client";
 
@@ -44,6 +49,13 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signUp: (email: string, password: string, fullName?: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
+  /** Zona horaria del perfil (de la que depende la hora de los avisos). */
+  timezone: string | null;
+  /** Nombre guardado en el perfil (puede estar vacío: entonces se usa el de la sesión). */
+  profileName: string;
+  updateProfile: (changes: ProfileChanges) => Promise<string | null>;
+  /** Borra la cuenta y todos sus datos. Devuelve un mensaje si falla. */
+  deleteAccount: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -186,6 +198,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [configured, session]);
 
+  const updateProfile = useCallback(
+    async (changes: ProfileChanges): Promise<string | null> => {
+      if (!configured || !userId) return "Inicia sesión para guardar el perfil.";
+      const error = await updateOwnProfile(userId, changes);
+      if (!error) setProfile({ id: userId, displayName: changes.displayName.trim(), timezone: changes.timezone });
+      return error;
+    },
+    [configured, userId],
+  );
+
+  const deleteAccount = useCallback(async (): Promise<string | null> => {
+    if (!configured || !userId) return "Inicia sesión para borrar la cuenta.";
+    const error = await deleteOwnAccount();
+    if (error) return error;
+
+    // La cuenta ya no existe: fuera también lo que quedaba en este dispositivo.
+    await disablePush();
+    clearAllLocalData(userId);
+    try {
+      await getSupabaseClient().auth.signOut({ scope: "local" });
+    } catch (signOutError) {
+      console.error("[orgrow] No se pudo cerrar la sesión local", signOutError);
+    }
+    return null;
+  }, [configured, userId]);
+
   const user = session?.user ?? null;
   const displayName = nameFromUser(user, profile);
 
@@ -200,8 +238,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      timezone: profile?.timezone ?? null,
+      profileName: profile?.displayName ?? "",
+      updateProfile,
+      deleteAccount,
     }),
-    [status, configured, user, displayName, signIn, signUp, signOut],
+    [status, configured, user, displayName, signIn, signUp, signOut, profile, updateProfile, deleteAccount],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -22,3 +22,49 @@ export async function fetchOwnProfile(): Promise<Profile | null> {
     return null;
   }
 }
+
+export interface ProfileChanges {
+  displayName: string;
+  timezone: string;
+}
+
+/** Zona horaria IANA válida para este navegador ("Europe/Madrid"). */
+export function isValidTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("es", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Guarda nombre y zona horaria del perfil propio. Devuelve un mensaje si falla. */
+export async function updateOwnProfile(userId: string, changes: ProfileChanges): Promise<string | null> {
+  const displayName = changes.displayName.trim();
+  if (displayName.length > 60) return "El nombre admite como máximo 60 caracteres.";
+  if (!isValidTimeZone(changes.timezone)) return "La zona horaria no es válida.";
+
+  try {
+    const { error } = await getSupabaseClient()
+      .from("profiles")
+      .update({ display_name: displayName, timezone: changes.timezone })
+      .eq("id", userId);
+    if (error) throw error;
+    return null;
+  } catch (error) {
+    console.error("[orgrow] No se pudo guardar el perfil", error);
+    return "No se pudo guardar. Comprueba tu conexión e inténtalo de nuevo.";
+  }
+}
+
+/** Borra la cuenta y todos sus datos (función `delete_own_account`, ver docs/supabase-account.sql). */
+export async function deleteOwnAccount(): Promise<string | null> {
+  try {
+    const { error } = await getSupabaseClient().rpc("delete_own_account");
+    if (error) throw error;
+    return null;
+  } catch (error) {
+    console.error("[orgrow] No se pudo borrar la cuenta", error);
+    return "No se pudo borrar la cuenta. Comprueba tu conexión y que has aplicado docs/supabase-account.sql.";
+  }
+}
