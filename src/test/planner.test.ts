@@ -2,14 +2,16 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   applyActivityPatch,
+  applyNotePatch,
   applyTaskPatch,
+  filterNotes,
   getActivitiesOn,
   getUpcomingActivities,
   groupActivitiesByDate,
   groupTasksByDate,
   sortActivities,
 } from "@/lib/planner";
-import type { Activity, Task } from "@/types/planner";
+import type { Activity, Note, Task } from "@/types/planner";
 
 const today = new Date(2026, 10, 16);
 
@@ -175,5 +177,51 @@ describe("activity helpers", () => {
     expect(applyActivityPatch(activity, { end: null }).end).toBeUndefined();
     // `undefined` means "do not touch".
     expect(applyActivityPatch(activity, { start: "11:00" }).location).toBe("Sala Norte");
+  });
+});
+
+describe("notas: búsqueda y edición", () => {
+  const note = (id: string, content: string, kind: Note["kind"] = "idea", pinned = false): Note => ({
+    id,
+    content,
+    kind,
+    pinned,
+    createdAt: 1,
+  });
+
+  const notes = [
+    note("1", "Planificar un viaje a Lisboa en primavera"),
+    note("2", "Llamar al teléfono del fontanero", "por-hacer"),
+    note("3", "Renovar el pasaporte", "recordatorio", true),
+  ];
+
+  it("busca sin distinguir mayúsculas ni acentos", () => {
+    expect(filterNotes(notes, { query: "TELEFONO" }).map((n) => n.id)).toEqual(["2"]);
+    expect(filterNotes(notes, { query: "teléfono" }).map((n) => n.id)).toEqual(["2"]);
+  });
+
+  it("exige todas las palabras, en cualquier orden", () => {
+    expect(filterNotes(notes, { query: "lisboa viaje" }).map((n) => n.id)).toEqual(["1"]);
+    expect(filterNotes(notes, { query: "lisboa pasaporte" })).toEqual([]);
+  });
+
+  it("combina el tipo con el texto", () => {
+    expect(filterNotes(notes, { kind: "por-hacer", query: "llamar" }).map((n) => n.id)).toEqual(["2"]);
+    expect(filterNotes(notes, { kind: "idea", query: "llamar" })).toEqual([]);
+  });
+
+  it("sin filtros devuelve todo, y espacios solos no filtran", () => {
+    expect(filterNotes(notes, {})).toHaveLength(3);
+    expect(filterNotes(notes, { query: "   " })).toHaveLength(3);
+  });
+
+  it("applyNotePatch recorta el texto y conserva lo que no cambia", () => {
+    const updated = applyNotePatch(notes[0]!, { content: "  Nuevo texto  ", kind: "recordatorio" });
+    expect(updated).toMatchObject({ id: "1", content: "Nuevo texto", kind: "recordatorio", pinned: false });
+  });
+
+  it("applyNotePatch rechaza dejar la nota vacía", () => {
+    expect(applyNotePatch(notes[0]!, { content: "   " })).toBeNull();
+    expect(applyNotePatch(notes[0]!, { pinned: true })).toMatchObject({ pinned: true });
   });
 });

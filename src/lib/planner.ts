@@ -4,6 +4,7 @@ import type {
   Activity,
   ActivityPatch,
   Note,
+  NotePatch,
   Priority,
   Task,
   TaskPatch,
@@ -93,6 +94,44 @@ export function getUpcomingActivities(
 
 export function sortNotes(notes: Note[]): Note[] {
   return [...notes].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt - a.createdAt);
+}
+
+/** Minúsculas y sin acentos: "Teléfono" se encuentra escribiendo "telefono". */
+export function normalizeSearchText(value: string): string {
+  return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+}
+
+/**
+ * Filtra por tipo y por texto. Cada palabra de la búsqueda debe aparecer en la
+ * nota (en cualquier orden), así "viaje lisboa" encuentra "Lisboa: planificar viaje".
+ */
+export function filterNotes(
+  notes: Note[],
+  { kind = "todas", query = "" }: { kind?: Note["kind"] | "todas"; query?: string },
+): Note[] {
+  const words = normalizeSearchText(query).split(/\s+/).filter(Boolean);
+
+  return notes.filter((note) => {
+    if (kind !== "todas" && note.kind !== kind) return false;
+    if (words.length === 0) return true;
+    const text = normalizeSearchText(note.content);
+    return words.every((word) => text.includes(word));
+  });
+}
+
+/**
+ * Aplica un cambio a una nota. Devuelve `null` si dejaría la nota vacía: una
+ * nota sin texto no tiene sentido y la base de datos también lo rechaza.
+ */
+export function applyNotePatch(note: Note, patch: NotePatch): Note | null {
+  const content = patch.content === undefined ? note.content : patch.content.trim();
+  if (!content) return null;
+  return {
+    ...note,
+    content,
+    kind: patch.kind ?? note.kind,
+    pinned: patch.pinned ?? note.pinned,
+  };
 }
 
 export function getTasksDueOn(tasks: Task[], dueDate: string | null): Task[] {
