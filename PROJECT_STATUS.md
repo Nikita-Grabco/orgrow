@@ -3,7 +3,7 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-26 (Parte 5 completada)
+Última actualización: 2026-11-26 (Parte 7 implementada)
 Commit de referencia: ver `git log` (rama `main`)
 Rama: `main`
 
@@ -195,6 +195,29 @@ Reglas de arquitectura:
 - Cerrar sesión disponible en la barra lateral (escritorio/tablet) y en la cabecera
   móvil.
 
+### PWA y modo sin conexión (Parte 7)
+
+- **Instalable:** `public/manifest.webmanifest`, iconos en `public/icons/` (generados con
+  `node scripts/generate-icons.mjs`, mismo diseño que `Brand`) y metas de iOS en `__root.tsx`.
+  `InstallCard` (dashboard) ofrece el botón nativo en Chrome/Android/PC y explica
+  *Compartir → Añadir a pantalla de inicio* en Safari de iPhone/iPad; se puede descartar.
+- **Service worker** (`public/sw.js`, registrado solo en producción): guarda la aplicación
+  (HTML por ruta, `/assets/*`, iconos, fuentes) y **nunca datos de la cuenta**: las peticiones
+  a Supabase (otro origen) y los POST pasan directos. Navegación: red primero, luego la última
+  copia de esa ruta, luego `/`, luego `/offline.html`. Al subir de versión (`VERSION`) borra las
+  cachés antiguas.
+- **Datos sin conexión** (`src/services/offline-repositories.ts`, por encima de los repositorios
+  de Supabase): cada lectura guarda una copia por usuario (`orgrow:v1:cache:<userId>`); sin red
+  se sirve esa copia. Las escrituras se aplican a la copia y, si el servidor no responde, entran
+  en una **cola** (`orgrow:v1:outbox:<userId>`) que se reenvía en orden al volver la red
+  (evento `online`, foco o cada 30 s). Un rechazo definitivo del servidor (permiso, dato inválido)
+  no se encola; si lo rechaza al reenviar, se descarta con aviso para no bloquear la cola.
+- **Sesión:** con el token caducado y sin red, `auth-store` abre la app con la sesión guardada
+  (`offline-session.ts`) en vez de mandar a `/acceso`; Supabase la renueva al volver la red.
+- **Cerrar sesión** borra la copia de datos de ese usuario pero **conserva la cola** de cambios
+  sin enviar (se envían al volver a entrar con la misma cuenta).
+- `ConnectionBanner` (en `AppShell`) avisa de "Sin conexión" y de los cambios pendientes.
+
 ### Backend (Parte 1)
 
 - Cliente único de Supabase en `src/services/supabase-client.ts`, creado de forma
@@ -242,7 +265,8 @@ Las siguientes partes:
 3. **Parte 5 — Notas:** ✅ editar, buscar y filtrar hechos; persistencia en servidor con la Parte 4.
 4. **Parte 6 — Agenda real:** ✅ hecha en local; solo falta el repositorio Supabase
    (va con la Parte 4).
-5. **Parte 7 — PWA:** instalable, service worker, offline y cola de escrituras.
+5. **Parte 7 — PWA:** ✅ implementada (instalable, service worker, copia local y cola de
+   escrituras sin conexión). Pendiente solo la **prueba manual en dispositivos reales**.
 6. **Parte 8 — Recordatorios:** hora de aviso, Web Push y función programada
    (iOS requiere PWA instalada; valorar Capacitor más adelante).
 7. **Parte 9 — Ajustes:** perfil, zona horaria, exportar/importar JSON, categorías
@@ -358,12 +382,13 @@ históricas, adjuntos.
     SMTP por defecto de Supabase hay límites de envío (~3 correos/hora) y puede caer
     en spam. Para el uso real conviene configurar SMTP propio (Parte 11) o desactivar
     la confirmación en el panel si se prefiere entrar al instante.
-12. **Todavía no es instalable** como app: falta el manifest y el service worker
-    (Parte 7). "Añadir a pantalla de inicio" funciona, pero sin modo offline.
+12. ~~No es instalable~~ ✅ Resuelto en la Parte 7. Límite: el service worker solo se
+    registra en **producción** (en `npm run dev` no hay caché), y `vite preview` no
+    sirve este build (busca `dist/server`), así que la PWA solo se prueba en el despliegue.
 13. ~~Datos locales por navegador~~ ✅ Resuelto en la Parte 4. Límites conocidos: sin
-    Realtime (se ve el cambio al volver a la app), sin modo offline (Parte 7: si no hay
-    red, el guardado falla, se avisa y se recarga lo último guardado) y TanStack Query
-    sigue sin usarse: el store mantiene su propio estado optimista.
+    Realtime (se ve el cambio al volver a la app), sin conflictos resueltos (última escritura
+    gana, también al reenviar cambios hechos sin conexión) y TanStack Query sigue sin
+    usarse: el store mantiene su propio estado optimista.
 14. La importación local es **por cuenta**: en un navegador compartido, una segunda
     cuenta que inicie sesión importaría también los datos locales antiguos. Aceptable
     con un solo usuario; revisar antes de abrir a más personas.
@@ -411,7 +436,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=
 
 ## 10. Siguiente paso exacto
 
-**Cerrar las Partes 4 y 5 con una prueba manual**, y después la **Parte 7 — PWA y offline**.
+**Cerrar las Partes 4, 5 y 7 con pruebas manuales**, y después la **Parte 8 — Recordatorios**.
 
 Prueba manual (hace falta una cuenta real confirmada):
 
@@ -423,6 +448,18 @@ Prueba manual (hace falta una cuenta real confirmada):
 5. Si había datos propios en `localStorage`, deben haberse subido una vez (aviso en pantalla).
 
 6. En `/notas`: editar una nota con el lápiz, buscar "telefono" y encontrar "teléfono".
+
+Prueba manual de la PWA (solo en el despliegue, con HTTPS; el service worker no corre en `npm run dev`):
+
+7. Abrir la app online una vez y comprobar en DevTools → Application → Service Workers que
+   está activo y que `manifest.webmanifest` no da errores.
+8. En el dashboard debe aparecer "Instala Orgrow" (Chrome/Android) o los pasos (Safari iOS).
+9. Instalarla, activar modo avión y abrirla: debe abrir con los datos de la última vez y el
+   aviso "Sin conexión".
+10. Sin red, crear una tarea y marcar otra: se ven al momento, el aviso cuenta "2 cambios
+    pendientes". Al volver la red se envían solos (comprobar en otro dispositivo).
+11. Con la app cerrada más de una hora y sin red, abrirla: no debe pedir iniciar sesión.
+12. Cerrar sesión: en `localStorage` desaparece `orgrow:v1:cache:<id>`.
 
 Antes de subir a internet: `npm audit`, `npm run build` y revisar que `git status` no
 muestra `.env*` (solo `.env.example`).
@@ -440,7 +477,7 @@ muestra `.env*` (solo `.env.example`).
 | 3 — Esquema y RLS | ✅ completada y verificada | ver `git log` |
 | 4 — Datos en servidor | ✅ implementada, falta prueba manual | ver `git log` |
 | 5 — Notas completas | ✅ completada | ver `git log` |
-| 7 — PWA y offline | ⏳ pendiente | — |
+| 7 — PWA y offline | ✅ implementada, falta prueba en dispositivos | ver `git log` |
 | 8 — Recordatorios | ⏳ pendiente | — |
 | 9 — Ajustes y datos | ⏳ pendiente | — |
 | 10 — Calidad y seguridad | ⏳ pendiente | — |
