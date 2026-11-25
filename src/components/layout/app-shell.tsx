@@ -6,6 +6,7 @@ import { HabitDialog } from "@/components/habits/habit-dialog";
 import { TaskDialog } from "@/components/tasks/task-dialog";
 import { AppSidebar } from "./app-sidebar";
 import { Brand } from "./brand";
+import { ConnectionBanner } from "./connection-banner";
 import { MobileNav } from "./mobile-nav";
 import { UserAvatar } from "./user-avatar";
 
@@ -15,6 +16,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <AppSidebar />
 
       <div className="md:pl-20 lg:pl-64">
+        <ConnectionBanner />
         <header className="flex items-center justify-between px-5 pt-5 md:hidden">
           <Brand />
           <div className="flex items-center gap-0.5">

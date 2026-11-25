@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
 import { Brand } from "@/components/layout/brand";
 import { importLocalDataOnce } from "@/services/local-import";
+import { createOfflinePlanner } from "@/services/offline-repositories";
 import { getSupabaseClient } from "@/services/supabase-client";
+import { syncStatus } from "@/services/sync-status";
 import {
   createSupabasePlannerRepositories,
   importPlannerData,
@@ -92,7 +94,23 @@ function AuthenticatedApp() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
 
-  const repositories = useMemo(() => createSupabasePlannerRepositories(getSupabaseClient()), []);
+  // Datos en Supabase, con copia en el dispositivo y cola de cambios para cuando no hay red.
+  const offline = useMemo(
+    () =>
+      createOfflinePlanner(createSupabasePlannerRepositories(getSupabaseClient()), userId ?? "anonymous", {
+        onDiscard: () =>
+          toast.error("Un cambio hecho sin conexión no se pudo guardar y se descartó."),
+      }),
+    [userId],
+  );
+
+  useEffect(() => {
+    const stop = offline.start();
+    return () => {
+      stop();
+      syncStatus.reset();
+    };
+  }, [offline]);
 
   // Primera vez en este dispositivo: sube lo que el usuario ya tenía guardado en local.
   const importLocalData = useCallback(async () => {
@@ -113,7 +131,7 @@ function AuthenticatedApp() {
   return (
     <PlannerProvider
       key={userId ?? "anonymous"}
-      repositories={repositories}
+      repositories={offline.repositories}
       beforeLoad={importLocalData}
       syncOnFocus
     >

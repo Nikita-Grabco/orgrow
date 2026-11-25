@@ -12,6 +12,8 @@ import {
 import { initialsFromName, resolveDisplayName } from "@/lib/user";
 import { translateAuthError } from "@/services/auth-errors";
 import type { Profile } from "@/services/mappers";
+import { clearOfflineCache, isRetryableError } from "@/services/offline-repositories";
+import { readStoredSession } from "@/services/offline-session";
 import { fetchOwnProfile } from "@/services/profile-repository";
 import { getSupabaseClient, isSupabaseConfigured } from "@/services/supabase-client";
 
@@ -74,10 +76,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     client.auth
       .getSession()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (!active) return;
-        setSession(data.session);
-        setStatus(data.session ? "authenticated" : "anonymous");
+
+        // Sin red no se puede renovar un token caducado, pero la sesión sigue ahí:
+        // se abre la app con ella (lo que se vea saldrá de la copia del dispositivo)
+        // y Supabase la renueva solo al volver la conexión.
+        const session =
+          data.session ?? (error && isRetryableError(error) ? readStoredSession() : null);
+
+        setSession(session);
+        setStatus(session ? "authenticated" : "anonymous");
       })
       .catch((error: unknown) => {
         if (!active) return;
@@ -86,8 +95,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
     // Cubre login, logout, refresco del token y el regreso desde un enlace de email.
-    const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
+    const { data } = client.auth.onAuthStateChange((event, nextSession) => {
       if (!active) return;
+      // El estado inicial lo decide `getSession()` (con su respaldo sin conexión);
+      // un INITIAL_SESSION vacío no debe deshacerlo.
+      if (event === "INITIAL_SESSION" && !nextSession) return;
       setSession(nextSession);
       setStatus(nextSession ? "authenticated" : "anonymous");
     });
@@ -153,12 +165,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     if (!configured) return;
+
+    // La copia de datos de este dispositivo es de esta cuenta: se borra al salir.
+    // Lo que aún no se envió se conserva y se enviará al volver a entrar.
+    const leavingUserId = session?.user.id;
+    if (leavingUserId) clearOfflineCache(leavingUserId);
+
     try {
-      await getSupabaseClient().auth.signOut();
+      const { error } = await getSupabaseClient().auth.signOut();
+      // Sin red el servidor no puede revocar la sesión; al menos se cierra aquí.
+      if (error) await getSupabaseClient().auth.signOut({ scope: "local" });
     } catch (error) {
       console.error("[orgrow] No se pudo cerrar la sesión", error);
     }
-  }, [configured]);
+  }, [configured, session]);
 
   const user = session?.user ?? null;
   const displayName = nameFromUser(user, profile);
