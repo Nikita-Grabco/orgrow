@@ -3,7 +3,7 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-26 (Parte 9 implementada)
+Última actualización: 2026-11-26 (Parte 10 implementada)
 Commit de referencia: ver `git log` (rama `main`)
 Rama: `main`
 
@@ -253,6 +253,28 @@ Reglas de arquitectura:
 - **Aplazado:** categorías propias (exige tabla, tokens de color dinámicos y cambiar los CHECK de
   la base de datos; se valorará aparte).
 
+### Calidad y seguridad (Parte 10)
+
+- **`npm run check`** ejecuta todo de una vez: tipos, lint (0 errores; 8 avisos de componentes
+  shadcn), tests, `npm audit --omit=dev` y `npm run audit:repo`.
+- **`scripts/audit-repo.mjs`** (`npm run audit:repo`): busca en lo versionado y en los commits sin
+  publicar claves/JWT/claves privadas, `.env`, URL reales de Supabase, correos personales y
+  líneas `Co-Authored-By`. Sale con error si encuentra algo. Pasarlo siempre antes de subir.
+- **`docs/supabase-security-tests.sql`**: pruebas de RLS y permisos (no deja datos). Demuestra que
+  un usuario no ve, edita, borra ni crea datos de otro en ninguna tabla, que un anónimo no lee
+  nada, que la base rechaza datos inválidos y que las funciones sensibles no son llamables.
+  **Pendiente de ejecutar por el usuario.**
+- **Cabeceras** (`src/lib/security-headers.ts`, aplicadas en `src/server.ts`): nosniff, referrer,
+  permisos del navegador y HSTS en https. La **CSP va en modo informe** (`Report-Only`) hasta
+  comprobarla en el dominio real (Parte 11); no lleva `frame-ancestors` porque el editor de
+  Lovable incrusta la app.
+- **Lint:** Prettier con `endOfLine: auto` (el repo es LF y Windows trabaja en CRLF) y formato aplicado.
+- **Validación en el servidor:** la hacen los `CHECK` y RLS de la base de datos (el navegador no es
+  de fiar); las pruebas SQL lo comprueban. No se añadió `zod`: no hay servidor propio que lo use.
+- **Aplazado a la Parte 11:** E2E con Playwright y accesibilidad automática (necesitan un
+  despliegue con cuenta de prueba), rate limiting propio (Supabase Auth ya limita intentos; ajustar
+  en su panel), CSP obligatoria.
+
 ### Backend (Parte 1)
 
 - Cliente único de Supabase en `src/services/supabase-client.ts`, creado de forma
@@ -307,7 +329,8 @@ Las siguientes partes:
    (`docs/recordatorios-setup.md`). iOS requiere PWA instalada.
 7. **Parte 9 — Ajustes:** ✅ perfil, zona horaria, avisos, exportar/importar JSON y borrado de
    cuenta. Aplazadas las categorías propias. Falta aplicar `docs/supabase-account.sql`.
-8. **Parte 10 — Calidad/seguridad:** validación con `zod` en servidor, tests de RLS,
+8. **Parte 10 — Calidad/seguridad:** ✅ lint, auditoría, cabeceras y pruebas SQL de RLS (E2E,
+   accesibilidad y CSP obligatoria pasan a la 11). Objetivo original: validación con `zod` en servidor, tests de RLS,
    rate limiting, E2E con Playwright, accesibilidad, lint normalizado.
 9. **Parte 11 — Producción:** dominio, entornos, backups, monitorización, CI/CD,
    releases y posible envoltorio nativo.
@@ -500,6 +523,8 @@ Prueba manual de la PWA (solo en el despliegue, con HTTPS; el service worker no 
 11. Con la app cerrada más de una hora y sin red, abrirla: no debe pedir iniciar sesión.
 12. Cerrar sesión: en `localStorage` desaparece `orgrow:v1:cache:<id>`.
 
+Pruebas de seguridad: pegar `docs/supabase-security-tests.sql` en el SQL Editor; deben salir todas las líneas en OK.
+
 Prueba manual de ajustes (tras ejecutar `docs/supabase-account.sql` y su verificación):
 
 - En `/ajustes`: cambiar nombre y zona horaria, recargar y comprobar que persisten y que el
@@ -529,7 +554,7 @@ muestra `.env*` (solo `.env.example`).
 | 7 — PWA y offline | ✅ implementada, falta prueba en dispositivos | ver `git log` |
 | 8 — Recordatorios | ✅ implementada, falta puesta en marcha y prueba | ver `git log` |
 | 9 — Ajustes y datos | ✅ implementada (sin categorías propias), falta aplicar SQL y probar | ver `git log` |
-| 10 — Calidad y seguridad | ⏳ pendiente | — |
+| 10 — Calidad y seguridad | ✅ implementada, falta ejecutar las pruebas SQL | ver `git log` |
 | 11 — Producción | ⏳ pendiente | — |
 
 ---
