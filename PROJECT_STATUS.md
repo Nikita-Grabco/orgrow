@@ -3,7 +3,7 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-26 (Parte 10 implementada)
+Última actualización: 2026-11-26 (Parte 11 preparada)
 Commit de referencia: ver `git log` (rama `main`)
 Rama: `main`
 
@@ -275,6 +275,18 @@ Reglas de arquitectura:
   despliegue con cuenta de prueba), rate limiting propio (Supabase Auth ya limita intentos; ajustar
   en su panel), CSP obligatoria.
 
+### Producción (Parte 11)
+
+- **CI:** `.github/workflows/ci.yml` (tipos, lint, tests, `npm audit`, build y auditoría de
+  archivos) y `.github/dependabot.yml`. Subir workflows exige permiso `workflow` en la credencial de GitHub.
+- **README** reescrito (antes contenía el prompt inicial) y **`docs/produccion.md`**: entornos
+  (dos proyectos de Supabase), variables, dominio, configuración de Auth, activar la CSP,
+  copias de seguridad, monitorización, releases/vuelta atrás y lista de comprobación final.
+- **Lo que solo puedes hacer tú** (paneles y cuentas): crear el proyecto de producción, hosting y
+  dominio, URL de Auth, SMTP, monitor de disponibilidad, copias, y activar la CSP tras comprobarla.
+- **No hecho:** E2E con Playwright y accesibilidad automática (necesitan despliegue y cuenta de
+  prueba), Sentry y Capacitor (opcionales; ver `docs/produccion.md`).
+
 ### Backend (Parte 1)
 
 - Cliente único de Supabase en `src/services/supabase-client.ts`, creado de forma
@@ -332,7 +344,8 @@ Las siguientes partes:
 8. **Parte 10 — Calidad/seguridad:** ✅ lint, auditoría, cabeceras y pruebas SQL de RLS (E2E,
    accesibilidad y CSP obligatoria pasan a la 11). Objetivo original: validación con `zod` en servidor, tests de RLS,
    rate limiting, E2E con Playwright, accesibilidad, lint normalizado.
-9. **Parte 11 — Producción:** dominio, entornos, backups, monitorización, CI/CD,
+9. **Parte 11 — Producción:** ✅ CI, documentación y lista de comprobación; el despliegue real
+   lo haces tú. Objetivo original: dominio, entornos, backups, monitorización, CI/CD,
    releases y posible envoltorio nativo.
 
 Extras no planificados aún: recurrencia de tareas, búsqueda global, estadísticas
@@ -555,7 +568,7 @@ muestra `.env*` (solo `.env.example`).
 | 8 — Recordatorios | ✅ implementada, falta puesta en marcha y prueba | ver `git log` |
 | 9 — Ajustes y datos | ✅ implementada (sin categorías propias), falta aplicar SQL y probar | ver `git log` |
 | 10 — Calidad y seguridad | ✅ implementada, falta ejecutar las pruebas SQL | ver `git log` |
-| 11 — Producción | ⏳ pendiente | — |
+| 11 — Producción | ✅ preparada (CI y guía); falta despliegue real | ver `git log` |
 
 ---
 

@@ -2,6 +2,7 @@
  * Auditoría previa a subir el repositorio: busca lo que NUNCA debe publicarse.
  *
  *   node scripts/audit-repo.mjs            # archivos versionados + historial local sin subir
+ *   node scripts/audit-repo.mjs --files-only  # solo archivos (lo usa la integración continua)
  *
  * Revisa:
  *  - archivos .env* versionados (solo se admite .env.example)
@@ -82,6 +83,7 @@ for (const file of tracked) {
 }
 
 /* 2) Historial aún no publicado (o todo si no hay remoto) */
+const filesOnly = process.argv.includes("--files-only");
 let range = "HEAD";
 try {
   const upstream = git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}").trim();
@@ -90,10 +92,12 @@ try {
   // Sin rama remota asociada: se revisa todo el historial.
 }
 
-const log = git("log", range, "--format=%H%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%B%x1e")
-  .split("\x1e")
-  .map((entry) => entry.trim())
-  .filter(Boolean);
+const log = filesOnly
+  ? []
+  : git("log", range, "--format=%H%x1f%an%x1f%ae%x1f%cn%x1f%ce%x1f%B%x1e")
+      .split("\x1e")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
 
 for (const entry of log) {
   const [hash, an, ae, cn, ce, body = ""] = entry.split("\x1f");

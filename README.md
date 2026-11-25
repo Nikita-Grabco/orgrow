@@ -1,55 +1,41 @@
 # Orgrow
 
-Quiero crear una aplicación web de organización personal diaria, que funcione perfectamente en móvil, tablet y ordenador.
+Aplicación web de organización personal diaria: tareas, agenda, hábitos y notas, con avisos
+(recordatorios) y modo sin conexión. Funciona en móvil, tablet y ordenador, y se puede instalar
+como app (PWA).
 
-El objetivo es ayudar al usuario a organizar su día, gestionar sus tareas y visualizar sus actividades pendientes.
+React 19 · TanStack Start/Router · TypeScript · Tailwind 4 · Supabase (Auth + Postgres con RLS).
 
-Diseña una interfaz moderna, minimalista, elegante y muy intuitiva.
+## Empezar
 
-La pantalla principal (Dashboard) debe incluir:
-
-Un saludo personalizado y la fecha actual.
-
-Un resumen de las tareas del día.
-
-Una lista de tareas pendientes con casillas para marcarlas como completadas.
-
-Un indicador visual del progreso diario.
-
-Una sección de próximas actividades.
-
-Un botón para añadir nuevas tareas.
-
-Un menú de navegación sencillo.
-
-Utiliza una distribución adaptativa: menú lateral en ordenador y navegación cómoda en móvil.
-
-Quiero un diseño limpio, profesional, con buena organización visual, tipografía moderna y colores suaves.
-
-IMPORTANTE:
-En esta primera versión céntrate exclusivamente en el frontend y el diseño visual. Utiliza datos de ejemplo para mostrar cómo funcionaría la aplicación.
-
-No conectes todavía ninguna base de datos ni implementes autenticación o backend.
-
-Prepara una estructura de código ordenada y fácil de ampliar en el futuro.
-
-This project was built with [Lovable](https://lovable.dev).
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/24a78348-c63e-5647-8d97-6b526d4a9564).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+```bash
+npm install
+cp .env.example .env.local   # y rellena los dos valores públicos de Supabase
 npm run dev
 ```
+
+Sin las variables de Supabase la app arranca pero muestra que falta configurar el servidor.
+
+## Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Compila para producción |
+| `npm run check` | Tipos + lint + tests + `npm audit` + auditoría del repositorio |
+| `npm test` | Tests (Vitest) |
+| `npm run audit:repo` | Busca secretos, `.env`, correos personales y firmas de coautor antes de subir |
+| `node scripts/generate-vapid-keys.mjs` | Claves de los avisos push |
+
+## Documentación
+
+- `PROJECT_STATUS.md` — estado, arquitectura, decisiones y pruebas manuales pendientes.
+- `docs/supabase-*.sql` — esquema, recordatorios, borrado de cuenta y pruebas de seguridad.
+- `docs/recordatorios-setup.md` — puesta en marcha de los avisos push.
+- `docs/produccion.md` — despliegue, entornos, copias de seguridad y lista de comprobación.
+
+## Seguridad
+
+Los valores de entorno viven en `.env.local` (ignorado por git). La única clave de Supabase que
+llega al navegador es la *publishable*; la *service role* y la clave privada VAPID **nunca** van
+en el repositorio ni en el navegador. El acceso a los datos lo limita RLS en la base de datos.
