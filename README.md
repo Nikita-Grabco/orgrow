@@ -1,4 +1,4 @@
-# Orgadia
+# Orgrow
 
 Quiero crear una aplicación web de organización personal diaria, que funcione perfectamente en móvil, tablet y ordenador.
 

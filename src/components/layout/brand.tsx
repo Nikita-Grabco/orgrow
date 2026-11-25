@@ -25,21 +25,21 @@ export function Brand({ compact = false, className, link = true, surface = "side
         />
       </span>
       {!compact && (
-        <span className="font-display font-semibold text-2xl leading-none text-foreground">orgadia</span>
+        <span className="font-display font-semibold text-2xl leading-none text-foreground">orgrow</span>
       )}
     </>
   );
 
   if (!link) {
     return (
-      <span className={cn("flex items-center gap-2.5", className)} aria-label="Orgadia">
+      <span className={cn("flex items-center gap-2.5", className)} aria-label="Orgrow">
         {content}
       </span>
     );
   }
 
   return (
-    <Link to="/" className={cn("flex items-center gap-2.5", className)} aria-label="Orgadia, inicio">
+    <Link to="/" className={cn("flex items-center gap-2.5", className)} aria-label="Orgrow, inicio">
       {content}
     </Link>
   );

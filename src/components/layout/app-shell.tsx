@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ActivityDialog } from "@/components/activities/activity-dialog";
+import { HabitDialog } from "@/components/habits/habit-dialog";
 import { TaskDialog } from "@/components/tasks/task-dialog";
 import { AppSidebar } from "./app-sidebar";
 import { Brand } from "./brand";
@@ -29,6 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <MobileNav />
       <TaskDialog />
       <ActivityDialog />
+      <HabitDialog />
     </div>
   );
 }

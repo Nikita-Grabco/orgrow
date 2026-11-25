@@ -1,4 +1,4 @@
-import type { Activity, Note, Task } from "@/types/planner";
+import type { Activity, Habit, Note, Task } from "@/types/planner";
 import type { CategoryId, Priority } from "@/types/planner";
 import { isoFromOffset, toISODate } from "@/lib/dates";
 
@@ -100,5 +100,48 @@ export function createSampleNotes(): Note[] {
     { id: "n5", content: "Libro recomendado: «Hábitos atómicos».", kind: "idea", pinned: false, createdAt: now - 50 * hour },
     { id: "n6", content: "Cambiar el filtro del agua.", kind: "por-hacer", pinned: false, createdAt: now - 72 * hour },
     { id: "n7", content: "Preguntar a Ana por la receta del curry.", kind: "recordatorio", pinned: false, createdAt: now - 90 * hour },
+  ];
+}
+
+/** Example habits for the first run (no history: the heatmap starts empty). */
+export function createSampleHabits(now: number): Habit[] {
+  return [
+    {
+      id: "h-gym",
+      name: "Ir al gimnasio",
+      kind: "check",
+      target: 1,
+      step: 1,
+      frequency: { type: "weekdays", days: [0, 2, 4] },
+      category: "salud",
+      archived: false,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "h-leer",
+      name: "Leer",
+      kind: "time",
+      target: 60,
+      step: 15,
+      frequency: { type: "daily" },
+      category: "personal",
+      archived: false,
+      createdAt: now + 1,
+      updatedAt: now + 1,
+    },
+    {
+      id: "h-agua",
+      name: "Beber agua",
+      kind: "count",
+      target: 1,
+      step: 0.25,
+      unit: "L",
+      frequency: { type: "daily" },
+      category: "salud",
+      archived: false,
+      createdAt: now + 2,
+      updatedAt: now + 2,
+    },
   ];
 }

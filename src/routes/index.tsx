@@ -10,9 +10,9 @@ import { UpcomingActivities } from "@/components/dashboard/upcoming-activities";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Orgadia — Tu día, organizado" },
+      { title: "Orgrow — Tu día, organizado" },
       { name: "description", content: "Organiza tu día: tareas, progreso diario, próximas actividades y notas en un solo lugar." },
-      { property: "og:title", content: "Orgadia — Tu día, organizado" },
+      { property: "og:title", content: "Orgrow — Tu día, organizado" },
       { property: "og:description", content: "Tareas, progreso diario, próximas actividades y notas en un solo lugar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

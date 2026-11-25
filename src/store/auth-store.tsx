@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((error: unknown) => {
         if (!active) return;
-        console.error("[orgadia] No se pudo recuperar la sesión", error);
+        console.error("[orgrow] No se pudo recuperar la sesión", error);
         setStatus("anonymous");
       });
 
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await getSupabaseClient().auth.signOut();
     } catch (error) {
-      console.error("[orgadia] No se pudo cerrar la sesión", error);
+      console.error("[orgrow] No se pudo cerrar la sesión", error);
     }
   }, [configured]);
 

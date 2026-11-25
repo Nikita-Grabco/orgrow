@@ -80,3 +80,57 @@ export type ActivityPatch = Partial<
   end?: string | null | undefined;
   location?: string | null | undefined;
 };
+
+/* -------------------------------------------------------------------------- */
+/* Habits                                                                     */
+/* -------------------------------------------------------------------------- */
+
+/** `check` = yes/no, `count` = amount with a goal (1 L), `time` = minutes with a goal. */
+export type HabitKind = "check" | "count" | "time";
+
+/** Weekdays are indexed 0 = Monday … 6 = Sunday, same order as `WEEKDAY_INITIALS`. */
+export type HabitFrequency =
+  | { type: "daily" }
+  | { type: "weekdays"; days: number[] }
+  | { type: "weekly"; times: number };
+
+export interface Habit {
+  id: string;
+  name: string;
+  kind: HabitKind;
+  /** Daily goal: 1 for `check`, an amount for `count`, minutes for `time`. */
+  target: number;
+  /** How much one tap on "+" adds (ignored for `check`). */
+  step: number;
+  /** Unit shown for `count` habits ("L", "vasos"…). `time` always uses minutes. */
+  unit?: string | undefined;
+  frequency: HabitFrequency;
+  category: CategoryId;
+  archived: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * Progress of one habit on one calendar day. There is at most one log per
+ * habit and day; a value of 0 means "no log" and the row is deleted.
+ */
+export interface HabitLog {
+  id: string;
+  habitId: string;
+  /** Local calendar date "YYYY-MM-DD". */
+  date: string;
+  value: number;
+}
+
+export type NewHabitInput = Pick<
+  Habit,
+  "name" | "kind" | "target" | "step" | "unit" | "frequency" | "category"
+>;
+
+export type HabitPatch = Partial<
+  Pick<Habit, "name" | "kind" | "target" | "step" | "frequency" | "category" | "archived">
+> & {
+  /** `null` clears the unit; `undefined` leaves it untouched. */
+  unit?: string | null | undefined;
+};

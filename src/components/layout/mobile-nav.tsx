@@ -29,7 +29,7 @@ export function MobileNav() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 pb-safe backdrop-blur-xl md:hidden"
       aria-label="Principal"
     >
-      <div className="mx-auto grid h-[68px] max-w-md grid-cols-5 items-center px-2">
+      <div className="mx-auto grid h-[68px] max-w-md grid-cols-6 items-center px-2">
         {NAV_ITEMS.slice(0, 2).map((item) => (
           <MobileNavLink key={item.to} item={item} />
         ))}

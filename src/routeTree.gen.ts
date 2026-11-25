@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccesoRouteImport } from './routes/acceso'
 import { Route as AgendaRouteImport } from './routes/agenda'
+import { Route as HabitosRouteImport } from './routes/habitos'
 import { Route as NotasRouteImport } from './routes/notas'
 import { Route as TareasRouteImport } from './routes/tareas'
 
@@ -30,6 +31,11 @@ const AgendaRoute = AgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HabitosRoute = HabitosRouteImport.update({
+  id: '/habitos',
+  path: '/habitos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NotasRoute = NotasRouteImport.update({
   id: '/notas',
   path: '/notas',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/acceso': typeof AccesoRoute
   '/agenda': typeof AgendaRoute
+  '/habitos': typeof HabitosRoute
   '/notas': typeof NotasRoute
   '/tareas': typeof TareasRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/acceso': typeof AccesoRoute
   '/agenda': typeof AgendaRoute
+  '/habitos': typeof HabitosRoute
   '/notas': typeof NotasRoute
   '/tareas': typeof TareasRoute
 }
@@ -60,21 +68,24 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/acceso': typeof AccesoRoute
   '/agenda': typeof AgendaRoute
+  '/habitos': typeof HabitosRoute
   '/notas': typeof NotasRoute
   '/tareas': typeof TareasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/acceso' | '/agenda' | '/notas' | '/tareas'
+  fullPaths: '/' | '/acceso' | '/agenda' | '/habitos' | '/notas' | '/tareas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/acceso' | '/agenda' | '/notas' | '/tareas'
-  id: '__root__' | '/' | '/acceso' | '/agenda' | '/notas' | '/tareas'
+  to: '/' | '/acceso' | '/agenda' | '/habitos' | '/notas' | '/tareas'
+  id:
+    '__root__' | '/' | '/acceso' | '/agenda' | '/habitos' | '/notas' | '/tareas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccesoRoute: typeof AccesoRoute
   AgendaRoute: typeof AgendaRoute
+  HabitosRoute: typeof HabitosRoute
   NotasRoute: typeof NotasRoute
   TareasRoute: typeof TareasRoute
 }
@@ -102,6 +113,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgendaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/habitos': {
+      id: '/habitos'
+      path: '/habitos'
+      fullPath: '/habitos'
+      preLoaderRoute: typeof HabitosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/notas': {
       id: '/notas'
       path: '/notas'
@@ -123,6 +141,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccesoRoute: AccesoRoute,
   AgendaRoute: AgendaRoute,
+  HabitosRoute: HabitosRoute,
   NotasRoute: NotasRoute,
   TareasRoute: TareasRoute,
 }

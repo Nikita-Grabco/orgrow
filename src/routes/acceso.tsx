@@ -12,10 +12,10 @@ import { useAuth } from "@/store/auth-store";
 export const Route = createFileRoute("/acceso")({
   head: () => ({
     meta: [
-      { title: "Acceso — Orgadia" },
-      { name: "description", content: "Entra en tu cuenta de Orgadia para ver tus tareas." },
-      { property: "og:title", content: "Acceso — Orgadia" },
-      { property: "og:description", content: "Entra en tu cuenta de Orgadia para ver tus tareas." },
+      { title: "Acceso — Orgrow" },
+      { name: "description", content: "Entra en tu cuenta de Orgrow para ver tus tareas." },
+      { property: "og:title", content: "Acceso — Orgrow" },
+      { property: "og:description", content: "Entra en tu cuenta de Orgrow para ver tus tareas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -81,7 +81,7 @@ function AccessPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-5 py-10">
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <h1 className="sr-only">Acceso a Orgadia</h1>
+          <h1 className="sr-only">Acceso a Orgrow</h1>
           <Brand link={false} surface="background" />
           <p className="text-sm text-muted-foreground">
             {isSignup

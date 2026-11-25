@@ -1,4 +1,4 @@
-# PROJECT_STATUS — Orgadia
+# PROJECT_STATUS — Orgrow
 
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
@@ -11,7 +11,7 @@ Rama: `main`
 
 ## 1. Objetivo y descripción
 
-**Orgadia** es una aplicación web de organización personal diaria que debe funcionar
+**Orgrow** es una aplicación web de organización personal diaria que debe funcionar
 igual de bien en **PC, iPhone/iPad y tablet Android**, a cualquier hora, como una
 aplicación normal (instalable, rápida y con datos sincronizados).
 
@@ -134,7 +134,7 @@ Reglas de arquitectura:
 ## 4. Funcionalidades implementadas
 
 ### Layout y diseño
-- Diseño original ("Calma") ahora bajo la marca **Orgadia**: rail de iconos en tablet,
+- Diseño original ("Calma") ahora bajo la marca **Orgrow**: rail de iconos en tablet,
   sidebar completo en escritorio, barra inferior en móvil con FAB central.
 - Tema oscuro por tokens, tipografía Source Sans 3.
 - Toasts con `sonner`.
@@ -326,7 +326,7 @@ históricas, adjuntos.
    instalado, así que `bun.lock` no refleja los cambios de dependencias. Decidir un
    único gestor antes de producción.
 3. ~~**Nombre de la app.**~~ ✅ Resuelto: la marca, los títulos de página y el
-   favicon pendiente dicen **Orgadia** (el manifest llega en la Parte 7). Se mantiene
+   favicon pendiente dicen **Orgrow** (el manifest llega en la Parte 7). Se mantiene
    la frase "Empecemos con calma" como texto, no como marca.
 4. ~~**`next-up-card` y `upcoming-activities` con datos de ejemplo**~~ ✅ Resuelto en
    la Parte 6: leen actividades reales del store.
@@ -417,7 +417,7 @@ Después de esta parte: **Parte 4 — Tareas en servidor**.
 |---|---|---|
 | 1 — Conexión del backend (Supabase) | ✅ completada | `44fba8e` |
 | 2 — Autenticación y perfiles | ✅ completada | `88fadbb` |
-| Marca Orgadia + nickname | ✅ completada | `829f326` |
+| Marca Orgrow + nickname | ✅ completada | `829f326` |
 | 6 — Agenda real (en local) | ✅ completada | ver `git log` |
 | 3 — Esquema y RLS | ⏳ siguiente | — |
 | 4 — Tareas en servidor | ⏳ pendiente | — |
@@ -427,3 +427,27 @@ Después de esta parte: **Parte 4 — Tareas en servidor**.
 | 9 — Ajustes y datos | ⏳ pendiente | — |
 | 10 — Calidad y seguridad | ⏳ pendiente | — |
 | 11 — Producción | ⏳ pendiente | — |
+
+---
+
+## 8. Funciones nuevas acordadas (pendientes de implementar)
+
+### Hábitos (decisiones del 2026-11-25) — ✅ implementado en local
+
+Ruta `/habitos`, repositorios en `src/services/habits-repository.ts`, reglas en `src/lib/habits.ts`, claves `orgrow:v1:habits` y `orgrow:v1:habit-logs`. Falta pasarlo a Supabase (Partes 3 y 4).
+
+- **Tipos de medición:** sí/no (ir al gym), cantidad con meta (1 l de agua, sumando
+  registros) y tiempo con meta (leer 60 min).
+- **Frecuencia flexible:** cada día, días concretos de la semana o X veces por semana.
+- **Progreso:** calendario de calor (estilo GitHub) por hábito, con intensidad según el
+  cumplimiento. Racha, porcentajes y anillo en Inicio quedan fuera por ahora.
+- **Modelo de datos (para la Parte 3):** `habits` (nombre, tipo, meta, unidad, frecuencia,
+  días, archivado) y `habit_logs` (hábito, fecha `YYYY-MM-DD`, valor). Un registro por
+  hábito y día.
+
+### Ideas aceptadas para valorar después
+- Revisión diaria y semanal (qué hiciste, qué quedó pendiente, nota breve).
+- Objetivos a largo plazo que agrupan hábitos y tareas.
+- Temporizador de enfoque ligado a una tarea o hábito, que suma tiempo al registro.
+
+Descartadas por ahora: diario y estado de ánimo.

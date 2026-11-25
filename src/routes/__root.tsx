@@ -83,10 +83,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#14181f" },
-      { title: "Orgadia — Organización personal diaria" },
+      { name: "theme-color", content: "#0b0d12" },
+      { title: "Orgrow — Organización personal diaria" },
       { name: "description", content: "Organiza tu día, gestiona tus tareas y guarda tus ideas." },
-            { property: "og:title", content: "Orgadia — Organización personal diaria" },
+            { property: "og:title", content: "Orgrow — Organización personal diaria" },
       { property: "og:description", content: "Organiza tu día, gestiona tus tareas y guarda tus ideas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

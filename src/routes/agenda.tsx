@@ -25,9 +25,9 @@ import { usePlanner } from "@/store/planner-store";
 export const Route = createFileRoute("/agenda")({
   head: () => ({
     meta: [
-      { title: "Agenda — Orgadia" },
+      { title: "Agenda — Orgrow" },
       { name: "description", content: "Tus actividades y tareas por día, semana o mes." },
-      { property: "og:title", content: "Agenda — Orgadia" },
+      { property: "og:title", content: "Agenda — Orgrow" },
       { property: "og:description", content: "Tus actividades y tareas por día, semana o mes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

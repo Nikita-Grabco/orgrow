@@ -10,14 +10,24 @@ import {
 import { toast } from "sonner";
 
 import { toISODate } from "@/lib/dates";
+import { roundValue } from "@/lib/habits";
 import { applyActivityPatch, applyTaskPatch, createId } from "@/lib/planner";
 import { createLocalActivitiesRepository } from "@/services/activities-repository";
+import {
+  createLocalHabitLogsRepository,
+  createLocalHabitsRepository,
+  habitLogId,
+} from "@/services/habits-repository";
 import { createLocalNotesRepository } from "@/services/notes-repository";
 import { createLocalTasksRepository } from "@/services/tasks-repository";
 import type {
   Activity,
   ActivityPatch,
+  Habit,
+  HabitLog,
+  HabitPatch,
   NewActivityInput,
+  NewHabitInput,
   NewNoteInput,
   NewTaskInput,
   Note,
@@ -44,8 +54,16 @@ interface ActivityDialogState {
   date: string | null;
 }
 
+interface HabitDialogState {
+  open: boolean;
+  mode: "create" | "edit";
+  habitId: string | null;
+}
+
 interface PlannerContextValue {
   tasks: Task[];
+  habits: Habit[];
+  habitLogs: HabitLog[];
   activities: Activity[];
   notes: Note[];
   /** False until saved data has been hydrated from the browser. */
@@ -59,6 +77,12 @@ interface PlannerContextValue {
   addActivity: (input: NewActivityInput) => void;
   editActivity: (id: string, patch: ActivityPatch) => void;
   deleteActivity: (id: string) => void;
+
+  addHabit: (input: NewHabitInput) => void;
+  editHabit: (id: string, patch: HabitPatch) => void;
+  deleteHabit: (id: string) => void;
+  /** Sets the progress of a habit on a day; 0 or less clears it. */
+  setHabitValue: (habitId: string, date: string, value: number) => void;
 
   addNote: (input: NewNoteInput) => void;
   togglePinNote: (id: string) => void;
@@ -76,6 +100,11 @@ interface PlannerContextValue {
   openAddActivity: (date?: string | null) => void;
   openEditActivity: (id: string) => void;
   setActivityDialogOpen: (open: boolean) => void;
+
+  habitDialog: HabitDialogState;
+  openAddHabit: () => void;
+  openEditHabit: (id: string) => void;
+  setHabitDialogOpen: (open: boolean) => void;
 }
 
 const PlannerContext = createContext<PlannerContextValue | null>(null);
@@ -94,45 +123,63 @@ const CLOSED_ACTIVITY_DIALOG: ActivityDialogState = {
   date: null,
 };
 
+const CLOSED_HABIT_DIALOG: HabitDialogState = { open: false, mode: "create", habitId: null };
+
 export function PlannerProvider({ children }: { children: ReactNode }) {
   const tasksRepo = useMemo(createLocalTasksRepository, []);
   const notesRepo = useMemo(createLocalNotesRepository, []);
   const activitiesRepo = useMemo(createLocalActivitiesRepository, []);
+  const habitsRepo = useMemo(createLocalHabitsRepository, []);
+  const habitLogsRepo = useMemo(createLocalHabitLogsRepository, []);
 
   // Empty until hydrated: the server never reads localStorage, so the first
   // client render matches the server HTML and avoids hydration mismatches.
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [taskDialog, setTaskDialog] = useState<TaskDialogState>(CLOSED_TASK_DIALOG);
   const [activityDialog, setActivityDialog] =
     useState<ActivityDialogState>(CLOSED_ACTIVITY_DIALOG);
+  const [habitDialog, setHabitDialog] = useState<HabitDialogState>(CLOSED_HABIT_DIALOG);
 
   const loadAll = useCallback(
-    () => Promise.all([tasksRepo.list(), notesRepo.list(), activitiesRepo.list()]),
-    [tasksRepo, notesRepo, activitiesRepo],
+    () =>
+      Promise.all([
+        tasksRepo.list(),
+        notesRepo.list(),
+        activitiesRepo.list(),
+        habitsRepo.list(),
+        habitLogsRepo.list(),
+      ]),
+    [tasksRepo, notesRepo, activitiesRepo, habitsRepo, habitLogsRepo],
   );
 
   const reload = useCallback(async () => {
-    const [nextTasks, nextNotes, nextActivities] = await loadAll();
+    const [nextTasks, nextNotes, nextActivities, nextHabits, nextLogs] = await loadAll();
     setTasks(nextTasks);
     setNotes(nextNotes);
     setActivities(nextActivities);
+    setHabits(nextHabits);
+    setHabitLogs(nextLogs);
   }, [loadAll]);
 
   useEffect(() => {
     let active = true;
 
     loadAll()
-      .then(([nextTasks, nextNotes, nextActivities]) => {
+      .then(([nextTasks, nextNotes, nextActivities, nextHabits, nextLogs]) => {
         if (!active) return;
         setTasks(nextTasks);
         setNotes(nextNotes);
         setActivities(nextActivities);
+        setHabits(nextHabits);
+        setHabitLogs(nextLogs);
       })
       .catch((error: unknown) => {
-        console.error("[orgadia] No se pudieron cargar los datos", error);
+        console.error("[orgrow] No se pudieron cargar los datos", error);
         toast.error("No se pudieron cargar tus datos guardados");
       })
       .finally(() => {
@@ -147,12 +194,12 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   /** Optimistic updates roll back to the saved truth when persistence fails. */
   const reportPersistError = useCallback(
     async (message: string, error: unknown) => {
-      console.error(`[orgadia] ${message}`, error);
+      console.error(`[orgrow] ${message}`, error);
       toast.error(message);
       try {
         await reload();
       } catch (reloadError) {
-        console.error("[orgadia] No se pudo recargar el estado", reloadError);
+        console.error("[orgrow] No se pudo recargar el estado", reloadError);
       }
     },
     [reload],
@@ -261,6 +308,79 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     [activitiesRepo, reportPersistError],
   );
 
+  const addHabit = useCallback(
+    (input: NewHabitInput) => {
+      const now = Date.now();
+      const habit: Habit = {
+        ...input,
+        id: createId("h"),
+        archived: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+      setHabits((prev) => [...prev, habit]);
+      void habitsRepo
+        .create(habit)
+        .catch((error: unknown) => reportPersistError("No se pudo guardar el hábito", error));
+    },
+    [habitsRepo, reportPersistError],
+  );
+
+  const editHabit = useCallback(
+    (id: string, patch: HabitPatch) => {
+      const habit = habits.find((item) => item.id === id);
+      if (!habit) return;
+
+      const { unit, ...rest } = patch;
+      const updated: Habit = { ...habit, ...rest, updatedAt: Date.now() };
+      if (unit !== undefined) updated.unit = unit ?? undefined;
+      if (updated.kind !== "count") updated.unit = undefined;
+      if (updated.kind === "check") {
+        updated.target = 1;
+        updated.step = 1;
+      }
+
+      setHabits((prev) => prev.map((item) => (item.id === id ? updated : item)));
+      void habitsRepo
+        .update(updated)
+        .catch((error: unknown) => reportPersistError("No se pudo guardar el hábito", error));
+    },
+    [habits, habitsRepo, reportPersistError],
+  );
+
+  const deleteHabit = useCallback(
+    (id: string) => {
+      setHabits((prev) => prev.filter((habit) => habit.id !== id));
+      setHabitLogs((prev) => prev.filter((log) => log.habitId !== id));
+      void Promise.all([habitsRepo.remove(id), habitLogsRepo.removeForHabit(id)]).catch(
+        (error: unknown) => reportPersistError("No se pudo eliminar el hábito", error),
+      );
+    },
+    [habitsRepo, habitLogsRepo, reportPersistError],
+  );
+
+  const setHabitValue = useCallback(
+    (habitId: string, date: string, value: number) => {
+      const id = habitLogId(habitId, date);
+      const amount = roundValue(value);
+
+      if (amount <= 0) {
+        setHabitLogs((prev) => prev.filter((log) => log.id !== id));
+        void habitLogsRepo
+          .remove(id)
+          .catch((error: unknown) => reportPersistError("No se pudo guardar el progreso", error));
+        return;
+      }
+
+      const log: HabitLog = { id, habitId, date, value: amount };
+      setHabitLogs((prev) => [...prev.filter((item) => item.id !== id), log]);
+      void habitLogsRepo
+        .upsert(log)
+        .catch((error: unknown) => reportPersistError("No se pudo guardar el progreso", error));
+    },
+    [habitLogsRepo, reportPersistError],
+  );
+
   const addNote = useCallback(
     (input: NewNoteInput) => {
       const note: Note = { ...input, id: createId("n"), pinned: false, createdAt: Date.now() };
@@ -345,11 +465,25 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     setActivityDialog((prev) => ({ ...prev, open }));
   }, []);
 
+  const openAddHabit = useCallback(() => {
+    setHabitDialog({ open: true, mode: "create", habitId: null });
+  }, []);
+
+  const openEditHabit = useCallback((id: string) => {
+    setHabitDialog({ open: true, mode: "edit", habitId: id });
+  }, []);
+
+  const setHabitDialogOpen = useCallback((open: boolean) => {
+    setHabitDialog((prev) => ({ ...prev, open }));
+  }, []);
+
   const value = useMemo<PlannerContextValue>(
     () => ({
       tasks,
       activities,
       notes,
+      habits,
+      habitLogs,
       isReady,
       toggleTask,
       addTask,
@@ -358,6 +492,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       addActivity,
       editActivity,
       deleteActivity,
+      addHabit,
+      editHabit,
+      deleteHabit,
+      setHabitValue,
       addNote,
       togglePinNote,
       deleteNote,
@@ -370,11 +508,17 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       openAddActivity,
       openEditActivity,
       setActivityDialogOpen,
+      habitDialog,
+      openAddHabit,
+      openEditHabit,
+      setHabitDialogOpen,
     }),
     [
       tasks,
       activities,
       notes,
+      habits,
+      habitLogs,
       isReady,
       toggleTask,
       addTask,
@@ -383,6 +527,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       addActivity,
       editActivity,
       deleteActivity,
+      addHabit,
+      editHabit,
+      deleteHabit,
+      setHabitValue,
       addNote,
       togglePinNote,
       deleteNote,
@@ -395,6 +543,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       openAddActivity,
       openEditActivity,
       setActivityDialogOpen,
+      habitDialog,
+      openAddHabit,
+      openEditHabit,
+      setHabitDialogOpen,
     ],
   );
 

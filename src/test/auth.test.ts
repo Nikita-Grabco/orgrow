@@ -8,7 +8,7 @@ describe("displayNameFromEmail", () => {
     expect(displayNameFromEmail("nikita.grabco@mail.com")).toBe("Nikita Grabco");
     expect(displayNameFromEmail("nikita_grabco@mail.com")).toBe("Nikita Grabco");
     expect(displayNameFromEmail("nikita-grabco@mail.com")).toBe("Nikita Grabco");
-    expect(displayNameFromEmail("nikita+orgadia@mail.com")).toBe("Nikita Orgadia");
+    expect(displayNameFromEmail("nikita+orgrow@mail.com")).toBe("Nikita Orgrow");
   });
 
   it("falls back when there is no usable email", () => {

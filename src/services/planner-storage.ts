@@ -12,6 +12,8 @@ export const STORAGE_KEYS = {
   tasks: "orgadia:v1:tasks",
   notes: "orgadia:v1:notes",
   activities: "orgadia:v1:activities",
+  habits: "orgrow:v1:habits",
+  habitLogs: "orgrow:v1:habit-logs",
 } as const;
 
 export interface StoredCollection<T> {
@@ -49,7 +51,7 @@ export function loadCollection<T>(key: string): StoredCollection<T> | null {
       items: parsed["items"],
     };
   } catch (error) {
-    console.error(`[orgadia] No se pudo leer "${key}"`, error);
+    console.error(`[orgrow] No se pudo leer "${key}"`, error);
     return null;
   }
 }
@@ -68,7 +70,7 @@ export function saveCollection<T>(key: string, items: T[]): boolean {
     storage.setItem(key, JSON.stringify(payload));
     return true;
   } catch (error) {
-    console.error(`[orgadia] No se pudo guardar "${key}"`, error);
+    console.error(`[orgrow] No se pudo guardar "${key}"`, error);
     return false;
   }
 }
@@ -79,6 +81,6 @@ export function clearCollection(key: string): void {
   try {
     storage.removeItem(key);
   } catch (error) {
-    console.error(`[orgadia] No se pudo borrar "${key}"`, error);
+    console.error(`[orgrow] No se pudo borrar "${key}"`, error);
   }
 }
