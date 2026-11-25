@@ -3,7 +3,7 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-25 (Parte 3 completada y verificada)
+Última actualización: 2026-11-26 (Parte 4 implementada)
 Commit de referencia: ver `git log` (rama `main`)
 Rama: `main`
 
@@ -232,8 +232,9 @@ Las siguientes partes:
 1. **Parte 3 — Esquema y RLS:** ✅ aplicada en Supabase y verificada (`docs/supabase-schema.sql`:
    6 tablas con índices y RLS). La UI ya lee el nombre de `profiles` y existe el mapeo
    `snake_case` ↔ `camelCase` en `src/services/mappers.ts`.
-2. **Parte 4 — Tareas en servidor:** repositorio Supabase, TanStack Query, importación
-   de los datos locales, sincronización entre dispositivos.
+2. **Parte 4 — Datos en servidor:** ✅ implementada (tareas, notas, actividades y
+   hábitos). Repositorios de Supabase, importación única de datos locales y recarga al
+   volver a la app. Pendiente solo la **prueba manual con dos dispositivos**.
 3. **Parte 5 — Notas:** editar, buscar, filtros y persistencia en servidor.
 4. **Parte 6 — Agenda real:** ✅ hecha en local; solo falta el repositorio Supabase
    (va con la Parte 4).
@@ -297,14 +298,23 @@ históricas, adjuntos.
   `src/router.tsx`. No hay endpoints ni *server functions* en uso.
 - ✅ **Parte 2 completada:** autenticación por email y contraseña, sesión persistente
   en el dispositivo y rutas privadas (`AuthGate`).
-- ❌ Sin consultas a datos todavía: tareas, notas y actividades siguen en
-  `localStorage` (Parte 4).
+- ✅ **Parte 4:** con sesión, los datos se leen y escriben en Supabase
+  (`src/services/supabase-repositories.ts`). `AuthGate` monta `PlannerProvider` con esos
+  repositorios; los de `localStorage` quedan para tests y como origen de la importación.
+- Ids `uuid` generados en el cliente (`createId`). Los registros de hábito se identifican
+  por `habitId:fecha` en la UI y por `(habit_id, log_date)` en la base de datos.
+- Importación única por cuenta y dispositivo (`src/services/local-import.ts`): omite los
+  datos de demo (`t1`, `a1`, `n1`, `h-gym`…), usa ids derivados (idempotente) y deja la
+  marca `orgrow:v1:imported:<userId>` en `localStorage`.
+- Sincronización entre dispositivos: recarga al volver a la app tras ≥5 s oculta
+  (`syncOnFocus`). No hay tiempo real (Realtime) todavía.
 
 ### Base de datos
 - ✅ Proyecto de Supabase creado (región UE) y accesible: el endpoint REST responde
   y rechaza tablas inexistentes con `PGRST205`, lo que confirma que la clave es válida.
 - ✅ **Parte 3 aplicada y verificada:** 6 tablas con RLS en el proyecto real. Sin sesión (`anon`) todo responde `permission denied`; con dos usuarios, ninguno ve ni toca filas del otro; el trigger crea el perfil con el nickname.
-- Datos en `localStorage` del navegador (por dispositivo, sin sincronización).
+- Los datos de cada cuenta están en las tablas de Supabase (con RLS). `localStorage` solo
+  conserva lo anterior a la Parte 4 y la marca de importación.
 - No existe carpeta `supabase/` ni migraciones. **El esquema se gestiona desde el
   panel de Supabase**, no con migraciones a mano en el repo.
 - La clave real vive solo en `.env.local` (ignorado por git); el repo contiene
@@ -346,8 +356,13 @@ históricas, adjuntos.
     la confirmación en el panel si se prefiere entrar al instante.
 12. **Todavía no es instalable** como app: falta el manifest y el service worker
     (Parte 7). "Añadir a pantalla de inicio" funciona, pero sin modo offline.
-13. Los datos siguen siendo **locales por navegador**: dos dispositivos con la misma
-    cuenta ven datos distintos hasta la Parte 4.
+13. ~~Datos locales por navegador~~ ✅ Resuelto en la Parte 4. Límites conocidos: sin
+    Realtime (se ve el cambio al volver a la app), sin modo offline (Parte 7: si no hay
+    red, el guardado falla, se avisa y se recarga lo último guardado) y TanStack Query
+    sigue sin usarse: el store mantiene su propio estado optimista.
+14. La importación local es **por cuenta**: en un navegador compartido, una segunda
+    cuenta que inicie sesión importaría también los datos locales antiguos. Aceptable
+    con un solo usuario; revisar antes de abrir a más personas.
 
 ---
 
@@ -392,17 +407,18 @@ VITE_SUPABASE_PUBLISHABLE_KEY=
 
 ## 10. Siguiente paso exacto
 
-**Parte 4 — Datos en servidor (tareas, notas, actividades y hábitos).**
+**Cerrar la Parte 4 con una prueba manual**, y después la **Parte 5 — Notas completas**.
 
-1. Repositorios de Supabase con la misma interfaz `list/create/update/remove` que los
-   de `localStorage`, usando `src/services/mappers.ts` (ya hecho) para traducir filas.
-2. Ids `uuid` generados en el cliente (`crypto.randomUUID`) para mantener la UI optimista.
-3. TanStack Query (instalado, sin usar) para carga, caché y sincronización.
-4. Importar los datos de `localStorage` la primera vez (ids nuevos) y avisar al usuario.
-5. Mantener el modo local si faltan las variables de entorno.
+Prueba manual (hace falta una cuenta real confirmada):
 
-**Criterio de terminado:** crear una tarea en un dispositivo y verla en otro con la
-misma cuenta; sin sesión no se lee ni se escribe nada.
+1. `npm run dev`, entrar en `/acceso`, y crear una tarea, una nota, una actividad y
+   un hábito con progreso.
+2. Abrir la app en otro navegador o dispositivo con la misma cuenta: debe verlo todo.
+3. Editar algo en uno, cambiar de pestaña 6 s y volver en el otro: se actualiza.
+4. En el SQL Editor: `select count(*) from tasks;` ≠ 0 y, sin sesión, `permission denied`.
+5. Si había datos propios en `localStorage`, deben haberse subido una vez (aviso en pantalla).
+
+**Parte 5 — Notas:** editar notas, buscar y filtrar. La persistencia ya está.
 
 Antes de subir a internet: `npm audit`, `npm run build` y revisar que `git status` no
 muestra `.env*` (solo `.env.example`).
@@ -418,7 +434,7 @@ muestra `.env*` (solo `.env.example`).
 | Marca Orgrow + nickname | ✅ completada | `829f326` |
 | 6 — Agenda real (en local) | ✅ completada | ver `git log` |
 | 3 — Esquema y RLS | ✅ completada y verificada | ver `git log` |
-| 4 — Datos en servidor | ⏳ siguiente | — |
+| 4 — Datos en servidor | ✅ implementada, falta prueba manual | ver `git log` |
 | 5 — Notas completas | ⏳ pendiente | — |
 | 7 — PWA y offline | ⏳ pendiente | — |
 | 8 — Recordatorios | ⏳ pendiente | — |
