@@ -94,9 +94,7 @@ export type NewActivityInput = Pick<
 >;
 
 /** Fields the UI may change on an existing activity. */
-export type ActivityPatch = Partial<
-  Pick<Activity, "title" | "category" | "date" | "start">
-> & {
+export type ActivityPatch = Partial<Pick<Activity, "title" | "category" | "date" | "start">> & {
   /** `null` clears the optional value; `undefined` leaves it untouched. */
   end?: string | null | undefined;
   location?: string | null | undefined;
@@ -113,9 +111,7 @@ export type HabitKind = "check" | "count" | "time";
 
 /** Weekdays are indexed 0 = Monday … 6 = Sunday, same order as `WEEKDAY_INITIALS`. */
 export type HabitFrequency =
-  | { type: "daily" }
-  | { type: "weekdays"; days: number[] }
-  | { type: "weekly"; times: number };
+  { type: "daily" } | { type: "weekdays"; days: number[] } | { type: "weekly"; times: number };
 
 export interface Habit {
   id: string;

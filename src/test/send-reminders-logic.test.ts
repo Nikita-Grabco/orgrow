@@ -28,13 +28,30 @@ describe("whenText", () => {
 describe("buildPayload", () => {
   it("tarea con hora", () => {
     expect(
-      buildPayload("task", { id: "t1", user_id: "u", title: "Llamar al médico", remind_before_minutes: 10, time: "09:30:00" }),
-    ).toEqual({ title: "Llamar al médico", body: "En 10 min · Tarea a las 09:30", url: "/tareas", tag: "task-t1" });
+      buildPayload("task", {
+        id: "t1",
+        user_id: "u",
+        title: "Llamar al médico",
+        remind_before_minutes: 10,
+        time: "09:30:00",
+      }),
+    ).toEqual({
+      title: "Llamar al médico",
+      body: "En 10 min · Tarea a las 09:30",
+      url: "/tareas",
+      tag: "task-t1",
+    });
   });
 
   it("tarea sin hora no inventa una", () => {
     expect(
-      buildPayload("task", { id: "t2", user_id: "u", title: "Comprar pan", remind_before_minutes: 0, time: null }).body,
+      buildPayload("task", {
+        id: "t2",
+        user_id: "u",
+        title: "Comprar pan",
+        remind_before_minutes: 0,
+        time: null,
+      }).body,
     ).toBe("Ahora · Tarea");
   });
 
@@ -58,15 +75,22 @@ describe("buildPayload", () => {
 
   it("el tag es distinto por elemento, para que un aviso sustituya al suyo y no a otro", () => {
     const row = { user_id: "u", title: "x", remind_before_minutes: 0, time: null };
-    expect(buildPayload("task", { ...row, id: "1" }).tag).not.toBe(buildPayload("task", { ...row, id: "2" }).tag);
-    expect(buildPayload("task", { ...row, id: "1" }).tag).not.toBe(buildPayload("activity", { ...row, id: "1" }).tag);
+    expect(buildPayload("task", { ...row, id: "1" }).tag).not.toBe(
+      buildPayload("task", { ...row, id: "2" }).tag,
+    );
+    expect(buildPayload("task", { ...row, id: "1" }).tag).not.toBe(
+      buildPayload("activity", { ...row, id: "1" }).tag,
+    );
   });
 });
 
 describe("dueWindow", () => {
   it("atiende lo vencido de las últimas 24 h y nada más antiguo", () => {
     const now = new Date("2026-12-01T10:00:00.000Z");
-    expect(dueWindow(now)).toEqual({ from: "2026-11-30T10:00:00.000Z", to: "2026-12-01T10:00:00.000Z" });
+    expect(dueWindow(now)).toEqual({
+      from: "2026-11-30T10:00:00.000Z",
+      to: "2026-12-01T10:00:00.000Z",
+    });
     expect(MAX_LATE_MS).toBe(86_400_000);
     expect(BATCH_LIMIT).toBeGreaterThan(0);
   });

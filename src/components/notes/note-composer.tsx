@@ -10,7 +10,13 @@ import { usePlanner } from "@/store/planner-store";
 import type { NoteKind } from "@/types/planner";
 
 /** Quick capture for undated ideas. `compact` hides the type selector. */
-export function NoteComposer({ compact = false, className }: { compact?: boolean; className?: string }) {
+export function NoteComposer({
+  compact = false,
+  className,
+}: {
+  compact?: boolean;
+  className?: string;
+}) {
   const { addNote } = usePlanner();
   const [content, setContent] = useState("");
   const [kind, setKind] = useState<NoteKind>("idea");
@@ -32,7 +38,13 @@ export function NoteComposer({ compact = false, className }: { compact?: boolean
   }
 
   return (
-    <form onSubmit={save} className={cn("rounded-2xl border border-border bg-card p-3 transition-shadow focus-within:shadow-soft focus-within:border-primary/40", className)}>
+    <form
+      onSubmit={save}
+      className={cn(
+        "rounded-2xl border border-border bg-card p-3 transition-shadow focus-within:shadow-soft focus-within:border-primary/40",
+        className,
+      )}
+    >
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}

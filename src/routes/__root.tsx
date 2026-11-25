@@ -87,8 +87,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#0b0d12" },
       { title: "Orgrow — Organización personal diaria" },
       { name: "description", content: "Organiza tu día, gestiona tus tareas y guarda tus ideas." },
-            { property: "og:title", content: "Orgrow — Organización personal diaria" },
-      { property: "og:description", content: "Organiza tu día, gestiona tus tareas y guarda tus ideas." },
+      { property: "og:title", content: "Orgrow — Organización personal diaria" },
+      {
+        property: "og:description",
+        content: "Organiza tu día, gestiona tus tareas y guarda tus ideas.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       // PWA: al añadirla a la pantalla de inicio se abre como una app, sin barra del navegador.

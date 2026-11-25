@@ -27,7 +27,9 @@ export function NextUpCard() {
           <p className="text-sm font-semibold text-primary">
             {dueDateLabel(next.date, today)} · {next.start}
           </p>
-          <h3 className="mt-1 font-display font-semibold text-3xl leading-tight text-foreground">{next.title}</h3>
+          <h3 className="mt-1 font-display font-semibold text-3xl leading-tight text-foreground">
+            {next.title}
+          </h3>
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-muted-foreground">
             {next.end && (
               <span className="inline-flex items-center gap-1.5">
@@ -45,7 +47,9 @@ export function NextUpCard() {
           </div>
         </div>
       ) : (
-        <p className="mt-6 font-display font-semibold text-2xl text-foreground">Sin más actividades. Disfruta.</p>
+        <p className="mt-6 font-display font-semibold text-2xl text-foreground">
+          Sin más actividades. Disfruta.
+        </p>
       )}
     </section>
   );

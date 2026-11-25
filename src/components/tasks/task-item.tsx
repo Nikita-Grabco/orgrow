@@ -28,7 +28,9 @@ export function TaskItem({ task }: { task: Task }) {
       <TaskCheck
         checked={task.completed}
         onToggle={() => toggleTask(task.id)}
-        label={task.completed ? `Marcar "${task.title}" como pendiente` : `Completar "${task.title}"`}
+        label={
+          task.completed ? `Marcar "${task.title}" como pendiente` : `Completar "${task.title}"`
+        }
       />
 
       <div className="min-w-0 flex-1">

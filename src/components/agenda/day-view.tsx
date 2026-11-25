@@ -17,7 +17,14 @@ interface DayViewProps {
 }
 
 /** A single day: activities on one side, tasks on the other. */
-export function DayView({ dateISO, label, activities, tasks, onAddActivity, onAddTask }: DayViewProps) {
+export function DayView({
+  dateISO,
+  label,
+  activities,
+  tasks,
+  onAddActivity,
+  onAddTask,
+}: DayViewProps) {
   return (
     <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-2">
       <SectionCard

@@ -43,7 +43,9 @@ function setup(network: (url: string) => Promise<Response>) {
     },
   };
 
-  const fetchMock = vi.fn((request: Request | string) => network(typeof request === "string" ? request : request.url));
+  const fetchMock = vi.fn((request: Request | string) =>
+    network(typeof request === "string" ? request : request.url),
+  );
   const self = {
     location: { origin: ORIGIN },
     addEventListener: (type: string, handler: Handler) => {

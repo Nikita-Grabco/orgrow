@@ -37,7 +37,11 @@ export function AppSidebar() {
       </nav>
 
       <div className="mt-6">
-        <Button onClick={() => openAddTask()} className="w-full px-0 lg:px-4" aria-label="Nueva tarea">
+        <Button
+          onClick={() => openAddTask()}
+          className="w-full px-0 lg:px-4"
+          aria-label="Nueva tarea"
+        >
           <Plus />
           <span className="hidden lg:inline">Nueva tarea</span>
         </Button>

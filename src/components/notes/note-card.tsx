@@ -96,13 +96,25 @@ export function NoteCard({ note, compact = false }: { note: Note; compact?: bool
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className={cn("inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider", kind.ink)}>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider",
+            kind.ink,
+          )}
+        >
           <Icon className="size-3.5" />
           {kind.label}
         </span>
-        {note.pinned && <Pin className={cn("size-3.5 fill-current", kind.ink)} aria-label="Fijada" />}
+        {note.pinned && (
+          <Pin className={cn("size-3.5 fill-current", kind.ink)} aria-label="Fijada" />
+        )}
       </div>
-      <p className={cn("mt-2 whitespace-pre-line text-foreground", compact ? "line-clamp-2 text-sm" : "text-[15px] leading-relaxed")}>
+      <p
+        className={cn(
+          "mt-2 whitespace-pre-line text-foreground",
+          compact ? "line-clamp-2 text-sm" : "text-[15px] leading-relaxed",
+        )}
+      >
         {note.content}
       </p>
 

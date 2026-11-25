@@ -25,7 +25,11 @@ export const syncStatus = {
   set(partial: Partial<SyncStatus>): void {
     const next = { ...state, ...partial };
     // Mismo contenido = mismo objeto: así no se dispara ningún render de más.
-    if (next.online === state.online && next.pending === state.pending && next.syncing === state.syncing) {
+    if (
+      next.online === state.online &&
+      next.pending === state.pending &&
+      next.syncing === state.syncing
+    ) {
       return;
     }
     state = next;

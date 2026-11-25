@@ -22,7 +22,10 @@ export const Route = createFileRoute("/tareas")({
       { title: "Tareas — Orgrow" },
       { name: "description", content: "Todas tus tareas por día y categoría, con su progreso." },
       { property: "og:title", content: "Tareas — Orgrow" },
-      { property: "og:description", content: "Todas tus tareas por día y categoría, con su progreso." },
+      {
+        property: "og:description",
+        content: "Todas tus tareas por día y categoría, con su progreso.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -47,7 +50,9 @@ function TasksPage() {
       <PageHeader
         eyebrow="Gestión"
         title="Tareas"
-        description={isReady ? `Tienes ${pending} tareas pendientes en total.` : "Cargando tus tareas…"}
+        description={
+          isReady ? `Tienes ${pending} tareas pendientes en total.` : "Cargando tus tareas…"
+        }
         actions={
           <Button onClick={() => openAddTask()} className="hidden md:inline-flex">
             <Plus /> Nueva tarea

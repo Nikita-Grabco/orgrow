@@ -21,7 +21,9 @@ export function ConnectionBanner() {
       aria-live="polite"
       className={cn(
         "sticky top-0 z-40 flex items-center justify-center gap-2 border-b border-border px-4 py-2 text-center text-xs font-medium",
-        status.online ? "bg-accent text-accent-foreground" : "bg-secondary text-secondary-foreground",
+        status.online
+          ? "bg-accent text-accent-foreground"
+          : "bg-secondary text-secondary-foreground",
       )}
     >
       <Icon className={cn("size-3.5 shrink-0", status.syncing && "animate-pulse")} aria-hidden />

@@ -154,12 +154,18 @@ function AccessPage() {
             </div>
 
             {error && (
-              <p role="alert" className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">
+              <p
+                role="alert"
+                className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive"
+              >
                 {error}
               </p>
             )}
             {notice && (
-              <p role="status" className="rounded-xl bg-primary-soft px-3 py-2 text-sm font-medium text-primary">
+              <p
+                role="status"
+                className="rounded-xl bg-primary-soft px-3 py-2 text-sm font-medium text-primary"
+              >
                 {notice}
               </p>
             )}
@@ -167,9 +173,7 @@ function AccessPage() {
             <Button
               type="submit"
               className="h-11 w-full"
-              disabled={
-                pending || !email.trim() || !password || (isSignup && !nickname.trim())
-              }
+              disabled={pending || !email.trim() || !password || (isSignup && !nickname.trim())}
             >
               {pending ? <Loader2 className="animate-spin" /> : <LogIn />}
               {isSignup ? "Crear cuenta" : "Entrar"}

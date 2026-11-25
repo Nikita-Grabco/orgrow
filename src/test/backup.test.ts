@@ -18,20 +18,63 @@ const NOW = 1_700_000_000_000;
 
 const payload: ImportPayload = {
   tasks: [
-    { id: UID, title: "Llamar", category: "trabajo", priority: "alta", dueDate: "2026-12-01", time: "09:30", completed: false, remindBefore: 10, createdAt: NOW, updatedAt: NOW },
+    {
+      id: UID,
+      title: "Llamar",
+      category: "trabajo",
+      priority: "alta",
+      dueDate: "2026-12-01",
+      time: "09:30",
+      completed: false,
+      remindBefore: 10,
+      createdAt: NOW,
+      updatedAt: NOW,
+    },
   ],
   notes: [{ id: "n-1", content: "Idea", kind: "idea", pinned: true, createdAt: NOW }],
   activities: [
-    { id: "a-1", title: "Dentista", category: "salud", date: "2026-12-02", start: "10:00", end: "11:00", location: "Centro", remindBefore: 60, createdAt: NOW, updatedAt: NOW },
+    {
+      id: "a-1",
+      title: "Dentista",
+      category: "salud",
+      date: "2026-12-02",
+      start: "10:00",
+      end: "11:00",
+      location: "Centro",
+      remindBefore: 60,
+      createdAt: NOW,
+      updatedAt: NOW,
+    },
   ],
   habits: [
-    { id: "h-1", name: "Agua", kind: "count", target: 2, step: 0.25, unit: "L", frequency: { type: "daily" }, category: "salud", archived: false, createdAt: NOW, updatedAt: NOW },
+    {
+      id: "h-1",
+      name: "Agua",
+      kind: "count",
+      target: 2,
+      step: 0.25,
+      unit: "L",
+      frequency: { type: "daily" },
+      category: "salud",
+      archived: false,
+      createdAt: NOW,
+      updatedAt: NOW,
+    },
   ],
   habitLogs: [{ id: "x", habitId: "h-1", date: "2026-12-01", value: 1.5 }],
 };
 
 const roundtrip = (data: unknown = payload, extra: object = {}) =>
-  parseBackup(JSON.stringify({ format: BACKUP_FORMAT, version: BACKUP_VERSION, owner: OWNER, data, ...extra }), NOW);
+  parseBackup(
+    JSON.stringify({
+      format: BACKUP_FORMAT,
+      version: BACKUP_VERSION,
+      owner: OWNER,
+      data,
+      ...extra,
+    }),
+    NOW,
+  );
 
 describe("copia de seguridad", () => {
   it("exportar y volver a leer devuelve los mismos datos", () => {
@@ -44,7 +87,11 @@ describe("copia de seguridad", () => {
     if (!result.ok) return;
     expect(result.backup.skipped).toBe(0);
     expect(result.backup.owner).toBe(OWNER);
-    expect(result.backup.payload.tasks[0]).toMatchObject({ title: "Llamar", time: "09:30", remindBefore: 10 });
+    expect(result.backup.payload.tasks[0]).toMatchObject({
+      title: "Llamar",
+      time: "09:30",
+      remindBefore: 10,
+    });
     expect(result.backup.payload.habits[0]).toMatchObject({ unit: "L", step: 0.25 });
     expect(result.backup.payload.habitLogs).toHaveLength(1);
   });
@@ -52,8 +99,12 @@ describe("copia de seguridad", () => {
   it("rechaza lo que no es una copia de Orgrow", () => {
     expect(parseBackup("no es json").ok).toBe(false);
     expect(parseBackup("[]").ok).toBe(false);
-    expect(parseBackup(JSON.stringify({ format: "otra-cosa", version: 1, data: {} })).ok).toBe(false);
-    expect(parseBackup(JSON.stringify({ format: BACKUP_FORMAT, version: 99, data: {} })).ok).toBe(false);
+    expect(parseBackup(JSON.stringify({ format: "otra-cosa", version: 1, data: {} })).ok).toBe(
+      false,
+    );
+    expect(parseBackup(JSON.stringify({ format: BACKUP_FORMAT, version: 99, data: {} })).ok).toBe(
+      false,
+    );
     expect(parseBackup("x".repeat(MAX_BACKUP_CHARS + 1)).ok).toBe(false);
   });
 
@@ -69,7 +120,11 @@ describe("copia de seguridad", () => {
       notes: [{ id: "n", content: "x".repeat(4001), kind: "idea" }],
       activities: [{ ...payload.activities[0], date: "2026-13-45" }],
       habits: payload.habits,
-      habitLogs: [...payload.habitLogs, { habitId: "no-existe", date: "2026-12-01", value: 1 }, { habitId: "h-1", date: "2026-12-01", value: 2 }],
+      habitLogs: [
+        ...payload.habitLogs,
+        { habitId: "no-existe", date: "2026-12-01", value: 1 },
+        { habitId: "h-1", date: "2026-12-01", value: 2 },
+      ],
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -82,7 +137,9 @@ describe("copia de seguridad", () => {
 
   it("normaliza a las restricciones de la base de datos", () => {
     const result = roundtrip({
-      tasks: [{ ...payload.tasks[0], dueDate: null, time: "09:30", remindBefore: 10, completed: false }],
+      tasks: [
+        { ...payload.tasks[0], dueDate: null, time: "09:30", remindBefore: 10, completed: false },
+      ],
       activities: [{ ...payload.activities[0], end: "09:00", remindBefore: -5 }],
       habits: [
         { ...payload.habits[0], id: "c", kind: "check", target: 9, step: 9, unit: "L" },
@@ -105,7 +162,9 @@ describe("copia de seguridad", () => {
   });
 
   it("una tarea completada conserva su fecha de completado", () => {
-    const result = roundtrip({ tasks: [{ ...payload.tasks[0], completed: true, completedAt: NOW + 5 }] });
+    const result = roundtrip({
+      tasks: [{ ...payload.tasks[0], completed: true, completedAt: NOW + 5 }],
+    });
     if (!result.ok) throw new Error("debería ser válida");
     expect(result.backup.payload.tasks[0]).toMatchObject({ completed: true, completedAt: NOW + 5 });
   });

@@ -40,11 +40,7 @@ function Probe() {
       >
         edit
       </button>
-      <button
-        type="button"
-        disabled={!first}
-        onClick={() => first && toggleTask(first.id)}
-      >
+      <button type="button" disabled={!first} onClick={() => first && toggleTask(first.id)}>
         toggle
       </button>
     </div>
@@ -72,9 +68,7 @@ describe("planner store", () => {
     expect(seeded).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByText("add"));
-    await waitFor(() =>
-      expect(Number(screen.getByTestId("count").textContent)).toBe(seeded + 1),
-    );
+    await waitFor(() => expect(Number(screen.getByTestId("count").textContent)).toBe(seeded + 1));
 
     first.unmount();
 
@@ -90,9 +84,7 @@ describe("planner store", () => {
     await waitUntilReady();
 
     fireEvent.click(screen.getByText("edit"));
-    await waitFor(() =>
-      expect(screen.getByTestId("titles").textContent).toContain("Editada"),
-    );
+    await waitFor(() => expect(screen.getByTestId("titles").textContent).toContain("Editada"));
 
     fireEvent.click(screen.getByText("toggle"));
     await waitFor(() => expect(screen.getByText("toggle")).toBeEnabled());

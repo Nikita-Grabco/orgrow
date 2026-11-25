@@ -23,7 +23,14 @@ export function ProgressRing({ value, size = 136, stroke = 11, children }: Progr
       aria-label="Progreso del día"
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={stroke} className="stroke-muted" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          strokeWidth={stroke}
+          className="stroke-muted"
+        />
         <circle
           cx={size / 2}
           cy={size / 2}

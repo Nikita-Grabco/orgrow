@@ -12,7 +12,11 @@ import {
 import { initialsFromName, resolveDisplayName } from "@/lib/user";
 import { translateAuthError } from "@/services/auth-errors";
 import type { Profile } from "@/services/mappers";
-import { clearAllLocalData, clearOfflineCache, isRetryableError } from "@/services/offline-repositories";
+import {
+  clearAllLocalData,
+  clearOfflineCache,
+  isRetryableError,
+} from "@/services/offline-repositories";
 import { readStoredSession } from "@/services/offline-session";
 import {
   deleteOwnAccount,
@@ -202,7 +206,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (changes: ProfileChanges): Promise<string | null> => {
       if (!configured || !userId) return "Inicia sesión para guardar el perfil.";
       const error = await updateOwnProfile(userId, changes);
-      if (!error) setProfile({ id: userId, displayName: changes.displayName.trim(), timezone: changes.timezone });
+      if (!error)
+        setProfile({
+          id: userId,
+          displayName: changes.displayName.trim(),
+          timezone: changes.timezone,
+        });
       return error;
     },
     [configured, userId],
@@ -243,7 +252,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
       deleteAccount,
     }),
-    [status, configured, user, displayName, signIn, signUp, signOut, profile, updateProfile, deleteAccount],
+    [
+      status,
+      configured,
+      user,
+      displayName,
+      signIn,
+      signUp,
+      signOut,
+      profile,
+      updateProfile,
+      deleteAccount,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -93,12 +93,18 @@ export function getUpcomingActivities(
 }
 
 export function sortNotes(notes: Note[]): Note[] {
-  return [...notes].sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt - a.createdAt);
+  return [...notes].sort(
+    (a, b) => Number(b.pinned) - Number(a.pinned) || b.createdAt - a.createdAt,
+  );
 }
 
 /** Minúsculas y sin acentos: "Teléfono" se encuentra escribiendo "telefono". */
 export function normalizeSearchText(value: string): string {
-  return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
 }
 
 /**
@@ -217,8 +223,7 @@ export function applyActivityPatch(activity: Activity, patch: ActivityPatch): Ac
     start: patch.start ?? activity.start,
     end: patch.end === undefined ? activity.end : (patch.end ?? undefined),
     location: patch.location === undefined ? activity.location : (patch.location ?? undefined),
-    remindBefore:
-      patch.remindBefore !== undefined ? patch.remindBefore : activity.remindBefore,
+    remindBefore: patch.remindBefore !== undefined ? patch.remindBefore : activity.remindBefore,
     updatedAt: Date.now(),
   };
 }

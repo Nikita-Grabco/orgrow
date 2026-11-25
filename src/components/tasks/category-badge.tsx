@@ -2,7 +2,13 @@ import { CATEGORIES } from "@/config/categories";
 import { cn } from "@/lib/utils";
 import type { CategoryId } from "@/types/planner";
 
-export function CategoryBadge({ category, className }: { category: CategoryId; className?: string }) {
+export function CategoryBadge({
+  category,
+  className,
+}: {
+  category: CategoryId;
+  className?: string;
+}) {
   const c = CATEGORIES[category];
   return (
     <span

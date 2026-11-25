@@ -79,26 +79,46 @@ describe("service worker · recibir un aviso", () => {
     const { push, showNotification } = setup();
 
     await push({});
-    expect(showNotification).toHaveBeenLastCalledWith("Orgrow", expect.objectContaining({ body: "", data: { url: "/" } }));
+    expect(showNotification).toHaveBeenLastCalledWith(
+      "Orgrow",
+      expect.objectContaining({ body: "", data: { url: "/" } }),
+    );
 
     await push("texto plano", "text");
-    expect(showNotification).toHaveBeenLastCalledWith("Orgrow", expect.objectContaining({ body: "texto plano" }));
+    expect(showNotification).toHaveBeenLastCalledWith(
+      "Orgrow",
+      expect.objectContaining({ body: "texto plano" }),
+    );
     expect(showNotification).toHaveBeenCalledTimes(2);
   });
 
   it("nunca deja que un aviso apunte fuera de la app", async () => {
     const { push, showNotification } = setup();
 
-    for (const hostile of ["https://evil.example", "//evil.example", "/\\evil.example", "javascript:alert(1)", 42, null]) {
+    for (const hostile of [
+      "https://evil.example",
+      "//evil.example",
+      "/\\evil.example",
+      "javascript:alert(1)",
+      42,
+      null,
+    ]) {
       await push({ title: "x", url: hostile });
-      expect(showNotification).toHaveBeenLastCalledWith("x", expect.objectContaining({ data: { url: "/" } }));
+      expect(showNotification).toHaveBeenLastCalledWith(
+        "x",
+        expect.objectContaining({ data: { url: "/" } }),
+      );
     }
   });
 });
 
 describe("service worker · pulsar un aviso", () => {
   it("cierra la notificación y enfoca la ventana abierta de la app, yendo a la ruta", async () => {
-    const win: FakeClient = { url: `${ORIGIN}/tareas`, focus: vi.fn(async () => {}), navigate: vi.fn(async () => {}) };
+    const win: FakeClient = {
+      url: `${ORIGIN}/tareas`,
+      focus: vi.fn(async () => {}),
+      navigate: vi.fn(async () => {}),
+    };
     const { click, openWindow } = setup([win]);
 
     const close = await click("/agenda");

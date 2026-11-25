@@ -9,7 +9,9 @@ export function registerServiceWorker(): void {
   const register = () => {
     navigator.serviceWorker
       .register("/sw.js", { scope: "/" })
-      .catch((error: unknown) => console.error("[orgrow] No se pudo registrar el service worker", error));
+      .catch((error: unknown) =>
+        console.error("[orgrow] No se pudo registrar el service worker", error),
+      );
   };
 
   if (document.readyState === "complete") register();

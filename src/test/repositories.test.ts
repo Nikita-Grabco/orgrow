@@ -54,7 +54,9 @@ describe("tasks repository", () => {
     expect(saved?.completedAt).toBe(5);
 
     await repo.remove("t-custom");
-    expect((await createLocalTasksRepository().list()).some((t) => t.id === "t-custom")).toBe(false);
+    expect((await createLocalTasksRepository().list()).some((t) => t.id === "t-custom")).toBe(
+      false,
+    );
   });
 
   it("keeps an empty list instead of reseeding after deleting everything", async () => {
@@ -107,11 +109,7 @@ describe("tasks repository", () => {
 });
 
 describe("activities repository", () => {
-  function makeActivity(
-    id: string,
-    title: string,
-    overrides: Partial<Activity> = {},
-  ): Activity {
+  function makeActivity(id: string, title: string, overrides: Partial<Activity> = {}): Activity {
     return {
       id,
       title,
@@ -179,7 +177,13 @@ describe("activities repository", () => {
             start: "08:00",
           },
           { id: "broken", title: "Sin hora", category: "salud", dayOffset: 1 },
-          { id: "unknown-category", title: "X", category: "otra", date: "2030-01-01", start: "10:00" },
+          {
+            id: "unknown-category",
+            title: "X",
+            category: "otra",
+            date: "2030-01-01",
+            start: "10:00",
+          },
         ],
       }),
     );

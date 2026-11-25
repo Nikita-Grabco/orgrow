@@ -43,11 +43,13 @@ function MissingConfiguration() {
     <CenteredScreen>
       <Brand link={false} surface="background" />
       <div className="surface max-w-md space-y-3 p-6 text-center">
-        <h1 className="font-display font-semibold text-xl text-foreground">Falta configurar el servidor</h1>
+        <h1 className="font-display font-semibold text-xl text-foreground">
+          Falta configurar el servidor
+        </h1>
         <p className="text-sm text-muted-foreground">
           Copia <code className="font-semibold text-foreground">.env.example</code> a{" "}
-          <code className="font-semibold text-foreground">.env.local</code>, rellena la URL y la clave
-          pública de Supabase, y reinicia la aplicación.
+          <code className="font-semibold text-foreground">.env.local</code>, rellena la URL y la
+          clave pública de Supabase, y reinicia la aplicación.
         </p>
       </div>
     </CenteredScreen>
@@ -97,10 +99,14 @@ function AuthenticatedApp() {
   // Datos en Supabase, con copia en el dispositivo y cola de cambios para cuando no hay red.
   const offline = useMemo(
     () =>
-      createOfflinePlanner(createSupabasePlannerRepositories(getSupabaseClient()), userId ?? "anonymous", {
-        onDiscard: () =>
-          toast.error("Un cambio hecho sin conexión no se pudo guardar y se descartó."),
-      }),
+      createOfflinePlanner(
+        createSupabasePlannerRepositories(getSupabaseClient()),
+        userId ?? "anonymous",
+        {
+          onDiscard: () =>
+            toast.error("Un cambio hecho sin conexión no se pudo guardar y se descartó."),
+        },
+      ),
     [userId],
   );
 

@@ -14,7 +14,9 @@ export function GreetingHeader() {
 
   return (
     <PageHeader
-      eyebrow={<span className="inline-block min-h-[1em]">{today ? formatLongDate(today) : "\u00a0"}</span>}
+      eyebrow={
+        <span className="inline-block min-h-[1em]">{today ? formatLongDate(today) : "\u00a0"}</span>
+      }
       title={
         <>
           {today ? getGreeting(today.getHours()) : "Hola"},{" "}

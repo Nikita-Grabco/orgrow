@@ -26,7 +26,8 @@ export function InstallCard() {
           </p>
         ) : (
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Pulsa <Share className="mx-0.5 inline size-4 align-text-bottom" aria-label="Compartir" /> y
+            Pulsa{" "}
+            <Share className="mx-0.5 inline size-4 align-text-bottom" aria-label="Compartir" /> y
             elige <SquarePlus className="mx-0.5 inline size-4 align-text-bottom" aria-hidden />{" "}
             <strong className="font-semibold text-foreground">Añadir a pantalla de inicio</strong>.
           </p>

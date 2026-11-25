@@ -128,7 +128,10 @@ function writeJson(storage: Storage | null, key: string, data: unknown): void {
  * cambios pendientes se conserva: son cambios suyos aún no enviados y se
  * enviarán la próxima vez que entre con la misma cuenta.
  */
-export function clearOfflineCache(userId: string, storage: Storage | null = defaultStorage()): void {
+export function clearOfflineCache(
+  userId: string,
+  storage: Storage | null = defaultStorage(),
+): void {
   try {
     storage?.removeItem(offlineKeys(userId).cache);
   } catch (error) {
@@ -137,7 +140,10 @@ export function clearOfflineCache(userId: string, storage: Storage | null = defa
 }
 
 /** Borra TODO lo de esta cuenta en el dispositivo, incluida la cola pendiente (al borrar la cuenta). */
-export function clearAllLocalData(userId: string, storage: Storage | null = defaultStorage()): void {
+export function clearAllLocalData(
+  userId: string,
+  storage: Storage | null = defaultStorage(),
+): void {
   try {
     const keys = offlineKeys(userId);
     storage?.removeItem(keys.cache);
@@ -287,7 +293,10 @@ export function createOfflinePlanner(
       update(item: T): Promise<T>;
       remove(id: string): Promise<void>;
     },
-    { newestFirst = false, onRemove }: { newestFirst?: boolean; onRemove?: (id: string) => void } = {},
+    {
+      newestFirst = false,
+      onRemove,
+    }: { newestFirst?: boolean; onRemove?: (id: string) => void } = {},
   ) {
     const slot = (snap: Snapshot) => snap as unknown as Record<string, T[] | undefined>;
 

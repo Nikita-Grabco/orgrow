@@ -64,11 +64,13 @@ describe("conversiones básicas", () => {
 
 describe("perfil", () => {
   it("pasa a camelCase", () => {
-    expect(profileFromRow({ id: "u1", display_name: "Nikita", timezone: "Europe/Madrid" })).toEqual({
-      id: "u1",
-      displayName: "Nikita",
-      timezone: "Europe/Madrid",
-    });
+    expect(profileFromRow({ id: "u1", display_name: "Nikita", timezone: "Europe/Madrid" })).toEqual(
+      {
+        id: "u1",
+        displayName: "Nikita",
+        timezone: "Europe/Madrid",
+      },
+    );
   });
 });
 
@@ -244,11 +246,13 @@ describe("hábitos", () => {
       step: 15,
       category: "personal" as const,
     };
-    expect(habitToInsert({ ...base, unit: undefined, frequency: { type: "daily" } })).toMatchObject({
-      frequency_type: "daily",
-      frequency_days: null,
-      frequency_times: null,
-    });
+    expect(habitToInsert({ ...base, unit: undefined, frequency: { type: "daily" } })).toMatchObject(
+      {
+        frequency_type: "daily",
+        frequency_days: null,
+        frequency_times: null,
+      },
+    );
     expect(
       habitToInsert({ ...base, unit: undefined, frequency: { type: "weekly", times: 4 } }),
     ).toMatchObject({ frequency_type: "weekly", frequency_days: null, frequency_times: 4 });
@@ -286,7 +290,9 @@ describe("hábitos", () => {
 
 describe("registros de hábito", () => {
   it("lee un registro con value numérico y lo identifica por hábito y día", () => {
-    expect(habitLogFromRow({ id: "l1", habit_id: "h1", log_date: "2026-11-25", value: "0.50" })).toEqual({
+    expect(
+      habitLogFromRow({ id: "l1", habit_id: "h1", log_date: "2026-11-25", value: "0.50" }),
+    ).toEqual({
       id: "h1:2026-11-25",
       habitId: "h1",
       date: "2026-11-25",
@@ -303,10 +309,19 @@ describe("recordatorios", () => {
   });
 
   it("al crear solo envía la columna cuando hay aviso (compatible con un servidor sin ella)", () => {
-    const input = { title: "x", category: "hogar" as const, priority: "baja" as const, dueDate: null };
-    expect(taskToInsert({ ...input, remindBefore: 10 })).toMatchObject({ remind_before_minutes: 10 });
+    const input = {
+      title: "x",
+      category: "hogar" as const,
+      priority: "baja" as const,
+      dueDate: null,
+    };
+    expect(taskToInsert({ ...input, remindBefore: 10 })).toMatchObject({
+      remind_before_minutes: 10,
+    });
     expect(taskToInsert({ ...input, remindBefore: 0 })).toMatchObject({ remind_before_minutes: 0 });
-    expect(taskToInsert({ ...input, remindBefore: null })).not.toHaveProperty("remind_before_minutes");
+    expect(taskToInsert({ ...input, remindBefore: null })).not.toHaveProperty(
+      "remind_before_minutes",
+    );
     expect(taskToInsert(input)).not.toHaveProperty("remind_before_minutes");
   });
 

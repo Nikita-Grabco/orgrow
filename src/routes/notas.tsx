@@ -18,9 +18,16 @@ export const Route = createFileRoute("/notas")({
   head: () => ({
     meta: [
       { title: "Notas e ideas — Orgrow" },
-      { name: "description", content: "Apunta ideas y cosas que quieres hacer algún día, sin fecha, para que no se te olviden." },
+      {
+        name: "description",
+        content:
+          "Apunta ideas y cosas que quieres hacer algún día, sin fecha, para que no se te olviden.",
+      },
       { property: "og:title", content: "Notas e ideas — Orgrow" },
-      { property: "og:description", content: "Ideas y pendientes sin fecha, para que no se te olviden." },
+      {
+        property: "og:description",
+        content: "Ideas y pendientes sin fecha, para que no se te olviden.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -104,7 +111,11 @@ function NotesPage() {
           description={`Ninguna nota contiene "${query.trim()}"${filter === "todas" ? "" : " en este tipo"}.`}
         />
       ) : (
-        <EmptyState icon={<NotebookPen />} title="Aún no hay notas aquí" description="Escribe arriba tu primera idea." />
+        <EmptyState
+          icon={<NotebookPen />}
+          title="Aún no hay notas aquí"
+          description="Escribe arriba tu primera idea."
+        />
       )}
     </div>
   );

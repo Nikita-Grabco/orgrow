@@ -72,7 +72,9 @@ function text(value: unknown, min: number, max: number): string | null {
 }
 
 function oneOf<T extends string>(value: unknown, allowed: readonly T[]): T | null {
-  return typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : null;
+  return typeof value === "string" && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : null;
 }
 
 function time(value: unknown): string | null {
@@ -92,7 +94,9 @@ function positive(value: unknown, max: number): number | null {
 }
 
 function remind(value: unknown): number | null {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 10080 ? value : null;
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 10080
+    ? value
+    : null;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -135,7 +139,13 @@ function readNote(raw: unknown, now: number): Note | null {
   const kind = oneOf<NoteKind>(raw["kind"], NOTE_KIND_IDS);
   if (!id || !content || !kind) return null;
 
-  return { id, content, kind, pinned: raw["pinned"] === true, createdAt: millis(raw["createdAt"], now) };
+  return {
+    id,
+    content,
+    kind,
+    pinned: raw["pinned"] === true,
+    createdAt: millis(raw["createdAt"], now),
+  };
 }
 
 function readActivity(raw: unknown, now: number): Activity | null {
@@ -171,7 +181,11 @@ function readFrequency(raw: unknown): HabitFrequency | null {
 
   if (raw["type"] === "weekdays") {
     const days = Array.isArray(raw["days"])
-      ? [...new Set(raw["days"].filter((d): d is number => Number.isInteger(d) && d >= 0 && d <= 6))].sort()
+      ? [
+          ...new Set(
+            raw["days"].filter((d): d is number => Number.isInteger(d) && d >= 0 && d <= 6),
+          ),
+        ].sort()
       : [];
     return days.length > 0 ? { type: "weekdays", days } : null;
   }
@@ -242,7 +256,10 @@ export interface ParsedBackup {
 
 export type BackupResult = { ok: true; backup: ParsedBackup } | { ok: false; error: string };
 
-function readList<T>(raw: unknown, read: (item: unknown) => T | null): { items: T[]; skipped: number } {
+function readList<T>(
+  raw: unknown,
+  read: (item: unknown) => T | null,
+): { items: T[]; skipped: number } {
   if (!Array.isArray(raw)) return { items: [], skipped: 0 };
   const items: T[] = [];
   let skipped = 0;
@@ -255,7 +272,8 @@ function readList<T>(raw: unknown, read: (item: unknown) => T | null): { items: 
 }
 
 export function parseBackup(source: string, now: number = Date.now()): BackupResult {
-  if (source.length > MAX_BACKUP_CHARS) return { ok: false, error: "El archivo es demasiado grande." };
+  if (source.length > MAX_BACKUP_CHARS)
+    return { ok: false, error: "El archivo es demasiado grande." };
 
   let json: unknown;
   try {
@@ -268,7 +286,10 @@ export function parseBackup(source: string, now: number = Date.now()): BackupRes
     return { ok: false, error: "Este archivo no es una copia de seguridad de Orgrow." };
   }
   if (typeof json["version"] !== "number" || json["version"] > BACKUP_VERSION) {
-    return { ok: false, error: "La copia es de una versión más nueva de Orgrow. Actualiza la app." };
+    return {
+      ok: false,
+      error: "La copia es de una versión más nueva de Orgrow. Actualiza la app.",
+    };
   }
 
   const data = json["data"];
@@ -293,7 +314,8 @@ export function parseBackup(source: string, now: number = Date.now()): BackupRes
     habitLogs.push({ ...log, id: habitLogId(log.habitId, log.date) });
   }
 
-  const owner = typeof json["owner"] === "string" && UUID.test(json["owner"]) ? json["owner"] : null;
+  const owner =
+    typeof json["owner"] === "string" && UUID.test(json["owner"]) ? json["owner"] : null;
 
   return {
     ok: true,
@@ -306,7 +328,13 @@ export function parseBackup(source: string, now: number = Date.now()): BackupRes
         habits: habits.items,
         habitLogs,
       },
-      skipped: tasks.skipped + notes.skipped + activities.skipped + habits.skipped + logs.skipped + orphanLogs,
+      skipped:
+        tasks.skipped +
+        notes.skipped +
+        activities.skipped +
+        habits.skipped +
+        logs.skipped +
+        orphanLogs,
     },
   };
 }
@@ -323,12 +351,17 @@ export function assignBackupIds(parsed: ParsedBackup, userId: string): ImportPay
   const idFor = (kind: string, id: string) =>
     same && UUID.test(id) ? id : deterministicUuid(`${userId}:backup:${kind}:${id}`);
 
-  const habitIds = new Map(parsed.payload.habits.map((habit) => [habit.id, idFor("habit", habit.id)] as const));
+  const habitIds = new Map(
+    parsed.payload.habits.map((habit) => [habit.id, idFor("habit", habit.id)] as const),
+  );
 
   return {
     tasks: parsed.payload.tasks.map((task) => ({ ...task, id: idFor("task", task.id) })),
     notes: parsed.payload.notes.map((note) => ({ ...note, id: idFor("note", note.id) })),
-    activities: parsed.payload.activities.map((activity) => ({ ...activity, id: idFor("activity", activity.id) })),
+    activities: parsed.payload.activities.map((activity) => ({
+      ...activity,
+      id: idFor("activity", activity.id),
+    })),
     habits: parsed.payload.habits.map((habit) => ({ ...habit, id: habitIds.get(habit.id)! })),
     habitLogs: parsed.payload.habitLogs.map((log) => {
       const habitId = habitIds.get(log.habitId)!;

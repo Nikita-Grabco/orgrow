@@ -169,8 +169,7 @@ export function PlannerProvider({
   const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [taskDialog, setTaskDialog] = useState<TaskDialogState>(CLOSED_TASK_DIALOG);
-  const [activityDialog, setActivityDialog] =
-    useState<ActivityDialogState>(CLOSED_ACTIVITY_DIALOG);
+  const [activityDialog, setActivityDialog] = useState<ActivityDialogState>(CLOSED_ACTIVITY_DIALOG);
   const [habitDialog, setHabitDialog] = useState<HabitDialogState>(CLOSED_HABIT_DIALOG);
 
   const loadAll = useCallback(

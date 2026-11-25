@@ -12,7 +12,12 @@ interface BrandProps {
 }
 
 /** Único sitio donde vive la marca. Nunca dupliques este marcado. */
-export function Brand({ compact = false, className, link = true, surface = "sidebar" }: BrandProps) {
+export function Brand({
+  compact = false,
+  className,
+  link = true,
+  surface = "sidebar",
+}: BrandProps) {
   const content = (
     <>
       <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-soft">
@@ -25,7 +30,9 @@ export function Brand({ compact = false, className, link = true, surface = "side
         />
       </span>
       {!compact && (
-        <span className="font-display font-semibold text-2xl leading-none text-foreground">orgrow</span>
+        <span className="font-display font-semibold text-2xl leading-none text-foreground">
+          orgrow
+        </span>
       )}
     </>
   );

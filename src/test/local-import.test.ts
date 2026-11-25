@@ -85,7 +85,15 @@ describe("buildImportPayload", () => {
           { id: "n-x-1", content: "mía", kind: "idea", pinned: false, createdAt: 1 },
         ],
         activities: [
-          { id: "a2", title: "demo", category: "trabajo", date: "2026-11-25", start: "09:00", createdAt: 1, updatedAt: 1 },
+          {
+            id: "a2",
+            title: "demo",
+            category: "trabajo",
+            date: "2026-11-25",
+            start: "09:00",
+            createdAt: 1,
+            updatedAt: 1,
+          },
         ],
       },
       "user-1",

@@ -97,7 +97,7 @@ describe("repositorio de tareas en Supabase", () => {
     expect(tasks).toHaveLength(1);
     expect(tasks[0]).toMatchObject({ id: TASK_ROW.id, dueDate: "2026-11-26", time: "09:00" });
     expect(calls[0]?.table).toBe("tasks");
-    expect(opsOf(calls[0]!, "order").map(([, args]) => (args[0] as string))).toEqual([
+    expect(opsOf(calls[0]!, "order").map(([, args]) => args[0] as string)).toEqual([
       "created_at",
       "id",
     ]);
@@ -135,7 +135,11 @@ describe("repositorio de tareas en Supabase", () => {
     const { client, calls } = fakeClient(() => ({ data: TASK_ROW }));
     const at = Date.parse("2026-11-25T10:00:00.000Z");
 
-    await createSupabaseTasksRepository(client).update({ ...TASK, completed: true, completedAt: at });
+    await createSupabaseTasksRepository(client).update({
+      ...TASK,
+      completed: true,
+      completedAt: at,
+    });
 
     expect(opsOf(calls[0]!, "update")[0]![1][0]).toMatchObject({
       completed: true,

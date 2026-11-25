@@ -62,8 +62,8 @@ export function DangerSection() {
             <AlertDialogHeader>
               <AlertDialogTitle>¿Borrar tu cuenta?</AlertDialogTitle>
               <AlertDialogDescription>
-                Se eliminarán tus tareas, agenda, hábitos, notas y avisos. Te recomendamos exportar una copia
-                antes. Para confirmar escribe <strong>{DELETE_CONFIRMATION}</strong>.
+                Se eliminarán tus tareas, agenda, hábitos, notas y avisos. Te recomendamos exportar
+                una copia antes. Para confirmar escribe <strong>{DELETE_CONFIRMATION}</strong>.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <Input

@@ -45,8 +45,7 @@ export function loadCollection<T>(key: string): StoredCollection<T> | null {
     if (!parsed || !Array.isArray(parsed["items"])) return null;
 
     return {
-      schemaVersion:
-        typeof parsed["schemaVersion"] === "number" ? parsed["schemaVersion"] : 0,
+      schemaVersion: typeof parsed["schemaVersion"] === "number" ? parsed["schemaVersion"] : 0,
       seeded: parsed["seeded"] === true,
       items: parsed["items"],
     };

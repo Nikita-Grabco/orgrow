@@ -151,13 +151,8 @@ function ActivityForm({ mode, activity, initialDate, onSubmit }: ActivityFormPro
 }
 
 export function ActivityDialog() {
-  const {
-    activities,
-    addActivity,
-    editActivity,
-    activityDialog,
-    setActivityDialogOpen,
-  } = usePlanner();
+  const { activities, addActivity, editActivity, activityDialog, setActivityDialogOpen } =
+    usePlanner();
   const { open, mode, activityId, date } = activityDialog;
   const editing = mode === "edit" ? activities.find((item) => item.id === activityId) : undefined;
 

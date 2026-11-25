@@ -105,7 +105,8 @@ export async function enablePush(userId: string): Promise<PushResult> {
     }
 
     const registration = await navigator.serviceWorker.getRegistration("/");
-    if (!registration) return { error: "La app aún no está lista para avisos. Recarga e inténtalo de nuevo." };
+    if (!registration)
+      return { error: "La app aún no está lista para avisos. Recarga e inténtalo de nuevo." };
 
     const subscription =
       (await registration.pushManager.getSubscription()) ??

@@ -30,10 +30,30 @@ function memoryRepositories(initialTasks: Task[] = []) {
         tasks = tasks.filter((item) => item.id !== id);
       },
     },
-    notes: { list: async () => [], create: async (n) => n, update: async (n) => n, remove: async () => {} },
-    activities: { list: async () => [], create: async (a) => a, update: async (a) => a, remove: async () => {} },
-    habits: { list: async () => [], create: async (h) => h, update: async (h) => h, remove: async () => {} },
-    habitLogs: { list: async () => [], upsert: async (l) => l, remove: async () => {}, removeForHabit: async () => {} },
+    notes: {
+      list: async () => [],
+      create: async (n) => n,
+      update: async (n) => n,
+      remove: async () => {},
+    },
+    activities: {
+      list: async () => [],
+      create: async (a) => a,
+      update: async (a) => a,
+      remove: async () => {},
+    },
+    habits: {
+      list: async () => [],
+      create: async (h) => h,
+      update: async (h) => h,
+      remove: async () => {},
+    },
+    habitLogs: {
+      list: async () => [],
+      upsert: async (l) => l,
+      remove: async () => {},
+      removeForHabit: async () => {},
+    },
   };
 
   return {

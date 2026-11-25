@@ -1,6 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { createLocalActivitiesRepository, type ActivitiesRepository } from "@/services/activities-repository";
+import {
+  createLocalActivitiesRepository,
+  type ActivitiesRepository,
+} from "@/services/activities-repository";
 import {
   createLocalHabitLogsRepository,
   createLocalHabitsRepository,
@@ -396,5 +399,9 @@ export async function importPlannerData(
     "id",
   );
 
-  await upsert("habit_logs", data.habitLogs.map((log) => habitLogToUpsert(log)), "habit_id,log_date");
+  await upsert(
+    "habit_logs",
+    data.habitLogs.map((log) => habitLogToUpsert(log)),
+    "habit_id,log_date",
+  );
 }

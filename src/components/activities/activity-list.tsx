@@ -9,7 +9,13 @@ import type { Activity } from "@/types/planner";
 import { CategoryBadge } from "@/components/tasks/category-badge";
 
 /** One activity, same interaction model as `TaskItem`: click or pencil to edit. */
-export function ActivityItem({ activity, showDate = false }: { activity: Activity; showDate?: boolean }) {
+export function ActivityItem({
+  activity,
+  showDate = false,
+}: {
+  activity: Activity;
+  showDate?: boolean;
+}) {
   const { openEditActivity, deleteActivity } = usePlanner();
   const category = CATEGORIES[activity.category];
 
@@ -22,18 +28,28 @@ export function ActivityItem({ activity, showDate = false }: { activity: Activit
         )}
       </div>
 
-      <div className={cn("min-w-0 flex-1 rounded-xl border-l-[3px] px-3.5 py-2.5", category.bar, category.soft)}>
+      <div
+        className={cn(
+          "min-w-0 flex-1 rounded-xl border-l-[3px] px-3.5 py-2.5",
+          category.bar,
+          category.soft,
+        )}
+      >
         <button
           type="button"
           onClick={() => openEditActivity(activity.id)}
           aria-label={`Editar "${activity.title}"`}
           className="block w-full cursor-pointer rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <span className="line-clamp-2 text-sm font-semibold text-foreground">{activity.title}</span>
+          <span className="line-clamp-2 text-sm font-semibold text-foreground">
+            {activity.title}
+          </span>
         </button>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           {activity.location && (
-            <span className={cn("inline-flex items-center gap-1 truncate font-medium", category.ink)}>
+            <span
+              className={cn("inline-flex items-center gap-1 truncate font-medium", category.ink)}
+            >
               <MapPin className="size-3 shrink-0" />
               {activity.location}
             </span>

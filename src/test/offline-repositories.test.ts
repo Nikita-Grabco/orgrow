@@ -96,8 +96,18 @@ function fakeServer() {
         state.tasks = state.tasks.filter((existing) => existing.id !== id);
       },
     },
-    notes: { list: async () => [], create: async (n) => n, update: async (n) => n, remove: async () => {} },
-    activities: { list: async () => [], create: async (a) => a, update: async (a) => a, remove: async () => {} },
+    notes: {
+      list: async () => [],
+      create: async (n) => n,
+      update: async (n) => n,
+      remove: async () => {},
+    },
+    activities: {
+      list: async () => [],
+      create: async (a) => a,
+      update: async (a) => a,
+      remove: async () => {},
+    },
     habits: {
       list: async () => {
         guard("habits.list", null);
@@ -145,8 +155,15 @@ describe("isRetryableError", () => {
   });
 
   it("no confunde un rechazo definitivo con un fallo de red", () => {
-    expect(isRetryableError({ message: 'new row violates check constraint "tasks_title_check"', code: "23514" })).toBe(false);
-    expect(isRetryableError({ message: "permission denied for table tasks", code: "42501" })).toBe(false);
+    expect(
+      isRetryableError({
+        message: 'new row violates check constraint "tasks_title_check"',
+        code: "23514",
+      }),
+    ).toBe(false);
+    expect(isRetryableError({ message: "permission denied for table tasks", code: "42501" })).toBe(
+      false,
+    );
     expect(isRetryableError(new Error('No existe la tarea "1"'))).toBe(false);
   });
 });
@@ -178,7 +195,9 @@ describe("lectura", () => {
     const server = fakeServer();
     server.state.tasks = [task("1")];
     const storage = memoryStorage();
-    await createOfflinePlanner(server.repositories, "user-a", { storage }).repositories.tasks.list();
+    await createOfflinePlanner(server.repositories, "user-a", {
+      storage,
+    }).repositories.tasks.list();
 
     server.state.online = false;
     const other = createOfflinePlanner(server.repositories, "user-b", { storage });
@@ -264,8 +283,11 @@ describe("escritura sin conexión", () => {
     const planner = createOfflinePlanner(server.repositories, USER, { storage: memoryStorage() });
     await planner.repositories.tasks.list();
 
-    server.state.reject = () => Object.assign(new Error("violates check constraint"), { code: "23514" });
-    await expect(planner.repositories.tasks.create(task("mala"))).rejects.toThrow("check constraint");
+    server.state.reject = () =>
+      Object.assign(new Error("violates check constraint"), { code: "23514" });
+    await expect(planner.repositories.tasks.create(task("mala"))).rejects.toThrow(
+      "check constraint",
+    );
     expect(syncStatus.get().pending).toBe(0);
   });
 
@@ -330,7 +352,12 @@ describe("hábitos", () => {
     await planner.repositories.habitLogs.list();
 
     server.state.online = false;
-    const log = (value: number): HabitLog => ({ id: "h1:2026-11-25", habitId: "h1", date: "2026-11-25", value });
+    const log = (value: number): HabitLog => ({
+      id: "h1:2026-11-25",
+      habitId: "h1",
+      date: "2026-11-25",
+      value,
+    });
     await planner.repositories.habitLogs.upsert(log(1));
     await planner.repositories.habitLogs.upsert(log(3));
 

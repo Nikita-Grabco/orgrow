@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { pushStatus, type PushStatus } from "@/lib/push";
-import { disablePush, enablePush, readPushContext, refreshPushRegistration } from "@/services/push-service";
+import {
+  disablePush,
+  enablePush,
+  readPushContext,
+  refreshPushRegistration,
+} from "@/services/push-service";
 import { useAuth } from "@/store/auth-store";
 
 /**

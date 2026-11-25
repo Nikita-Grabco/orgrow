@@ -52,7 +52,9 @@ export function TodayTasks() {
 
           <TaskList
             tasks={visible}
-            emptyTitle={filter === "pendientes" ? "¡Todo hecho por hoy!" : "Aún no has completado nada"}
+            emptyTitle={
+              filter === "pendientes" ? "¡Todo hecho por hoy!" : "Aún no has completado nada"
+            }
             emptyDescription={
               filter === "pendientes"
                 ? "Tómate un respiro, te lo has ganado."

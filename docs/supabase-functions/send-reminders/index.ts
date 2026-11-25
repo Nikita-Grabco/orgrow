@@ -121,7 +121,10 @@ async function processSource(source: Source, now: Date, summary: Summary): Promi
   const { data: claimedRows, error: claimError } = await supabase
     .from(source.table)
     .update({ reminded_at: now.toISOString() })
-    .in("id", reachable.map((row) => row.id))
+    .in(
+      "id",
+      reachable.map((row) => row.id),
+    )
     .is("reminded_at", null)
     .select("id");
   if (claimError) throw claimError;

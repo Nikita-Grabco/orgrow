@@ -31,7 +31,11 @@ export function ReminderField({ value, onChange, hasDate, hasTime }: ReminderFie
       {hasDate ? (
         <div className="flex flex-wrap gap-2">
           {REMINDER_OPTIONS.map((option) => (
-            <Chip key={String(option.value)} selected={value === option.value} onClick={() => onChange(option.value)}>
+            <Chip
+              key={String(option.value)}
+              selected={value === option.value}
+              onClick={() => onChange(option.value)}
+            >
               {option.value !== null && <Bell className="size-3" aria-hidden />}
               {option.label}
             </Chip>
@@ -50,7 +54,13 @@ export function ReminderField({ value, onChange, hasDate, hasTime }: ReminderFie
       {value !== null && status === "off" && (
         <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           Los avisos aún no están activados en este dispositivo.
-          <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void enable()}>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => void enable()}
+          >
             Activar avisos
           </Button>
         </p>

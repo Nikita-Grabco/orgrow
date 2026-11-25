@@ -131,11 +131,7 @@ describe("activity helpers", () => {
 
   it("groups activities by day in chronological order", () => {
     const groups = groupActivitiesByDate(activities);
-    expect(groups.map((group) => group.date)).toEqual([
-      "2026-11-15",
-      "2026-11-16",
-      "2026-11-17",
-    ]);
+    expect(groups.map((group) => group.date)).toEqual(["2026-11-15", "2026-11-16", "2026-11-17"]);
     expect(groups[1]?.activities.map((a) => a.id)).toEqual(["a2", "a1"]);
   });
 
@@ -181,7 +177,12 @@ describe("activity helpers", () => {
 });
 
 describe("notas: búsqueda y edición", () => {
-  const note = (id: string, content: string, kind: Note["kind"] = "idea", pinned = false): Note => ({
+  const note = (
+    id: string,
+    content: string,
+    kind: Note["kind"] = "idea",
+    pinned = false,
+  ): Note => ({
     id,
     content,
     kind,
@@ -206,7 +207,9 @@ describe("notas: búsqueda y edición", () => {
   });
 
   it("combina el tipo con el texto", () => {
-    expect(filterNotes(notes, { kind: "por-hacer", query: "llamar" }).map((n) => n.id)).toEqual(["2"]);
+    expect(filterNotes(notes, { kind: "por-hacer", query: "llamar" }).map((n) => n.id)).toEqual([
+      "2",
+    ]);
     expect(filterNotes(notes, { kind: "idea", query: "llamar" })).toEqual([]);
   });
 
@@ -217,7 +220,12 @@ describe("notas: búsqueda y edición", () => {
 
   it("applyNotePatch recorta el texto y conserva lo que no cambia", () => {
     const updated = applyNotePatch(notes[0]!, { content: "  Nuevo texto  ", kind: "recordatorio" });
-    expect(updated).toMatchObject({ id: "1", content: "Nuevo texto", kind: "recordatorio", pinned: false });
+    expect(updated).toMatchObject({
+      id: "1",
+      content: "Nuevo texto",
+      kind: "recordatorio",
+      pinned: false,
+    });
   });
 
   it("applyNotePatch rechaza dejar la nota vacía", () => {

@@ -21,7 +21,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="flex items-center justify-between px-5 pt-5 md:hidden">
           <Brand />
           <div className="flex items-center gap-0.5">
-            <Link to="/ajustes" aria-label="Ajustes" title="Ajustes" className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Link
+              to="/ajustes"
+              aria-label="Ajustes"
+              title="Ajustes"
+              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               <UserAvatar />
             </Link>
             <SignOutButton />

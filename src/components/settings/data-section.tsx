@@ -16,9 +16,15 @@ export function DataSection() {
   const [importing, setImporting] = useState(false);
 
   function exportData() {
-    const file = createBackup({ tasks, notes, activities, habits, habitLogs }, user?.id ?? null, new Date());
+    const file = createBackup(
+      { tasks, notes, activities, habits, habitLogs },
+      user?.id ?? null,
+      new Date(),
+    );
     downloadBackup(file);
-    toast.success("Copia descargada", { description: "Guárdala en un lugar seguro: contiene todos tus datos." });
+    toast.success("Copia descargada", {
+      description: "Guárdala en un lugar seguro: contiene todos tus datos.",
+    });
   }
 
   async function importFile(file: File) {
@@ -37,7 +43,11 @@ export function DataSection() {
       }
 
       const payload = assignBackupIds(parsed.backup, user.id);
-      const total = payload.tasks.length + payload.notes.length + payload.activities.length + payload.habits.length;
+      const total =
+        payload.tasks.length +
+        payload.notes.length +
+        payload.activities.length +
+        payload.habits.length;
       if (total === 0) {
         toast.error("La copia no contiene datos que importar.");
         return;
@@ -88,8 +98,8 @@ export function DataSection() {
         />
       </div>
       <p className="text-xs text-muted-foreground">
-        Importar añade o actualiza elementos; no borra nada de lo que ya tienes. Importar el mismo archivo
-        dos veces no duplica datos.
+        Importar añade o actualiza elementos; no borra nada de lo que ya tienes. Importar el mismo
+        archivo dos veces no duplica datos.
       </p>
     </SettingsSection>
   );

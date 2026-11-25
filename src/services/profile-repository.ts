@@ -39,7 +39,10 @@ export function isValidTimeZone(value: string): boolean {
 }
 
 /** Guarda nombre y zona horaria del perfil propio. Devuelve un mensaje si falla. */
-export async function updateOwnProfile(userId: string, changes: ProfileChanges): Promise<string | null> {
+export async function updateOwnProfile(
+  userId: string,
+  changes: ProfileChanges,
+): Promise<string | null> {
   const displayName = changes.displayName.trim();
   if (displayName.length > 60) return "El nombre admite como máximo 60 caracteres.";
   if (!isValidTimeZone(changes.timezone)) return "La zona horaria no es válida.";

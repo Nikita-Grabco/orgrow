@@ -63,7 +63,12 @@ export function WeekView({ dates, activities, tasks, todayISO, onSelectDay }: We
                     CATEGORIES[activity.category].ink,
                   )}
                 >
-                  <span className={cn("size-1.5 shrink-0 rounded-full", CATEGORIES[activity.category].dot)} />
+                  <span
+                    className={cn(
+                      "size-1.5 shrink-0 rounded-full",
+                      CATEGORIES[activity.category].dot,
+                    )}
+                  />
                   <span className="tabular-nums">{activity.start}</span>
                   <span className="truncate">{activity.title}</span>
                 </span>

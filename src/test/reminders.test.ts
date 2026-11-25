@@ -81,12 +81,15 @@ describe("almacenamiento local", () => {
   it("conserva el aviso al guardar y volver a leer", async () => {
     const tasks = createLocalTasksRepository();
     await tasks.create(task);
-    expect((await createLocalTasksRepository().list()).find((item) => item.id === "t-1")?.remindBefore).toBe(10);
+    expect(
+      (await createLocalTasksRepository().list()).find((item) => item.id === "t-1")?.remindBefore,
+    ).toBe(10);
 
     const activities = createLocalActivitiesRepository();
     await activities.create(activity);
     expect(
-      (await createLocalActivitiesRepository().list()).find((item) => item.id === "a-1")?.remindBefore,
+      (await createLocalActivitiesRepository().list()).find((item) => item.id === "a-1")
+        ?.remindBefore,
     ).toBe(60);
   });
 });

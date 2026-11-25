@@ -11,7 +11,12 @@ function repositoriesWith(initial: Note[]) {
   const saved: Note[] = [];
 
   const repositories: PlannerRepositories = {
-    tasks: { list: async () => [], create: async (t) => t, update: async (t) => t, remove: async () => {} },
+    tasks: {
+      list: async () => [],
+      create: async (t) => t,
+      update: async (t) => t,
+      remove: async () => {},
+    },
     notes: {
       list: async () => [...notes],
       create: async (note) => note,
@@ -22,9 +27,24 @@ function repositoriesWith(initial: Note[]) {
       },
       remove: async () => {},
     },
-    activities: { list: async () => [], create: async (a) => a, update: async (a) => a, remove: async () => {} },
-    habits: { list: async () => [], create: async (h) => h, update: async (h) => h, remove: async () => {} },
-    habitLogs: { list: async () => [], upsert: async (l) => l, remove: async () => {}, removeForHabit: async () => {} },
+    activities: {
+      list: async () => [],
+      create: async (a) => a,
+      update: async (a) => a,
+      remove: async () => {},
+    },
+    habits: {
+      list: async () => [],
+      create: async (h) => h,
+      update: async (h) => h,
+      remove: async () => {},
+    },
+    habitLogs: {
+      list: async () => [],
+      upsert: async (l) => l,
+      remove: async () => {},
+      removeForHabit: async () => {},
+    },
   };
   return { repositories, saved };
 }
@@ -73,7 +93,9 @@ describe("editar una nota", () => {
     await waitFor(() => expect(saved).toHaveLength(1));
     expect(saved[0]).toMatchObject({ content: "Comprar pan y leche", kind: "recordatorio" });
     expect(await screen.findByText("Comprar pan y leche")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Editar nota", { selector: "textarea" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Editar nota", { selector: "textarea" }),
+    ).not.toBeInTheDocument();
   });
 
   it("Enter guarda y Escape cancela sin guardar", async () => {
@@ -112,6 +134,8 @@ describe("editar una nota", () => {
     fireEvent.change(box, { target: { value: "Comprar pan" } });
     fireEvent.click(screen.getByRole("button", { name: /Guardar/ }));
     expect(saved).toHaveLength(0);
-    expect(screen.queryByLabelText("Editar nota", { selector: "textarea" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Editar nota", { selector: "textarea" }),
+    ).not.toBeInTheDocument();
   });
 });

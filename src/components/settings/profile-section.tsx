@@ -22,7 +22,8 @@ const FALLBACK_ZONES = [
 function timeZones(current: string): string[] {
   let zones = FALLBACK_ZONES;
   try {
-    const supported = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf;
+    const supported = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] })
+      .supportedValuesOf;
     zones = supported?.("timeZone") ?? FALLBACK_ZONES;
   } catch {
     zones = FALLBACK_ZONES;
@@ -51,7 +52,10 @@ export function ProfileSection() {
   }
 
   return (
-    <SettingsSection title="Perfil" description="Cómo te llamamos y en qué zona horaria están tus avisos.">
+    <SettingsSection
+      title="Perfil"
+      description="Cómo te llamamos y en qué zona horaria están tus avisos."
+    >
       <form onSubmit={(event) => void save(event)} className="space-y-4">
         <label className="block space-y-1.5">
           <span className="eyebrow">Nombre</span>

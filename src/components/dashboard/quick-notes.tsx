@@ -16,7 +16,10 @@ export function QuickNotes() {
       title="Ideas y notas"
       icon={<NotebookPen />}
       action={
-        <Link to="/notas" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+        <Link
+          to="/notas"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+        >
           Ver todas <ArrowRight className="size-3" />
         </Link>
       }
