@@ -229,8 +229,10 @@ Parte 3 porque el usuario la pidió antes.
 
 Las siguientes partes:
 
-1. **Parte 3 — Esquema y RLS:** tablas `profiles`, `tasks`, `notes`, `activities`,
-   índices y políticas por usuario.
+1. **Parte 3 — Esquema y RLS:** 📝 redactado en `docs/supabase-schema.sql` (6 tablas:
+   `profiles`, `tasks`, `notes`, `activities`, `habits`, `habit_logs`, con índices y RLS).
+   Probado en un Postgres local de prueba; **pendiente de aplicar** en Supabase (por
+   Lovable o desde el SQL Editor) y de ejecutar sus comprobaciones finales.
 2. **Parte 4 — Tareas en servidor:** repositorio Supabase, TanStack Query, importación
    de los datos locales, sincronización entre dispositivos.
 3. **Parte 5 — Notas:** editar, buscar, filtros y persistencia en servidor.
