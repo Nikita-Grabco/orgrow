@@ -9,8 +9,10 @@ import {
   type ReactNode,
 } from "react";
 
-import { displayNameFromEmail, initialsFromName } from "@/lib/user";
+import { initialsFromName, resolveDisplayName } from "@/lib/user";
 import { translateAuthError } from "@/services/auth-errors";
+import type { Profile } from "@/services/mappers";
+import { fetchOwnProfile } from "@/services/profile-repository";
 import { getSupabaseClient, isSupabaseConfigured } from "@/services/supabase-client";
 
 /**
@@ -43,21 +45,23 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function nameFromUser(user: User | null): string {
+function nameFromUser(user: User | null, profile: Profile | null): string {
   if (!user) return "";
 
   const metadataName = user.user_metadata["full_name"] ?? user.user_metadata["name"];
-  if (typeof metadataName === "string" && metadataName.trim()) {
-    return metadataName.trim();
-  }
-  // Antes de existir la tabla `profiles` (Parte 3) el email es la única fuente.
-  return displayNameFromEmail(user.email);
+  // El perfil manda; mientras carga (o si falla) sirve el nickname de la sesión.
+  return resolveDisplayName(
+    profile?.displayName,
+    typeof metadataName === "string" ? metadataName : null,
+    user.email,
+  );
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const configured = useMemo(isSupabaseConfigured, []);
   const [session, setSession] = useState<Session | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     if (!configured) {
@@ -94,6 +98,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [configured]);
 
+  const userId = session?.user.id ?? null;
+
+  // Carga el perfil al iniciar sesión y lo descarta al cerrarla o cambiar de cuenta.
+  useEffect(() => {
+    if (!configured || !userId) {
+      setProfile(null);
+      return;
+    }
+
+    let active = true;
+    void fetchOwnProfile().then((loaded) => {
+      if (active) setProfile(loaded);
+    });
+    return () => {
+      active = false;
+    };
+  }, [configured, userId]);
+
   const signIn = useCallback(
     async (email: string, password: string): Promise<AuthResult> => {
       if (!configured) return { error: "Este dispositivo no tiene configurado el servidor." };
@@ -116,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email,
           password,
           // `full_name` acaba en `raw_user_meta_data` y es el nombre que se
-          // muestra en la app. La tabla `profiles` (Parte 3) lo sustituirá.
+          // muestra en la app hasta que carga `profiles`, que lo recibe por trigger.
           ...(cleanName ? { options: { data: { full_name: cleanName } } } : {}),
         });
         if (error) return { error: translateAuthError(error) };
@@ -139,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [configured]);
 
   const user = session?.user ?? null;
-  const displayName = nameFromUser(user);
+  const displayName = nameFromUser(user, profile);
 
   const value = useMemo<AuthContextValue>(
     () => ({

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { displayNameFromEmail, initialsFromName, FALLBACK_NAME } from "@/lib/user";
+import {
+  displayNameFromEmail,
+  initialsFromName,
+  resolveDisplayName,
+  FALLBACK_NAME,
+} from "@/lib/user";
 import { translateAuthError } from "@/services/auth-errors";
 
 describe("displayNameFromEmail", () => {
@@ -16,6 +21,15 @@ describe("displayNameFromEmail", () => {
     expect(displayNameFromEmail(undefined)).toBe(FALLBACK_NAME);
     expect(displayNameFromEmail("")).toBe(FALLBACK_NAME);
     expect(displayNameFromEmail("@mail.com")).toBe(FALLBACK_NAME);
+  });
+});
+
+describe("resolveDisplayName", () => {
+  it("prefers the profile, then the session nickname, then the email", () => {
+    expect(resolveDisplayName("Nikita", "Otro", "a@mail.com")).toBe("Nikita");
+    expect(resolveDisplayName("", "Nick", "a@mail.com")).toBe("Nick");
+    expect(resolveDisplayName(null, "  ", "nikita.grabco@mail.com")).toBe("Nikita Grabco");
+    expect(resolveDisplayName(undefined, undefined, null)).toBe(FALLBACK_NAME);
   });
 });
 

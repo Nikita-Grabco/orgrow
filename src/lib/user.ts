@@ -25,6 +25,18 @@ export function displayNameFromEmail(email: string | null | undefined): string {
   return words.map((word) => capitalize(word)).join(" ");
 }
 
+/**
+ * Qué nombre mostrar, de más a menos fiable: el del perfil (tabla `profiles`),
+ * el nickname guardado en la sesión y, por último, uno derivado del email.
+ */
+export function resolveDisplayName(
+  profileName: string | null | undefined,
+  metadataName: string | null | undefined,
+  email: string | null | undefined,
+): string {
+  return profileName?.trim() || metadataName?.trim() || displayNameFromEmail(email);
+}
+
 /** "Nikita Grabco" → "NG"; "Nikita" → "NI"; sin nombre → "?". */
 export function initialsFromName(name: string): string {
   const words = name
