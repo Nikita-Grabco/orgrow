@@ -6,6 +6,7 @@ import { NextUpCard } from "@/components/dashboard/next-up-card";
 import { QuickNotes } from "@/components/dashboard/quick-notes";
 import { TodayTasks } from "@/components/dashboard/today-tasks";
 import { UpcomingActivities } from "@/components/dashboard/upcoming-activities";
+import { InstallCard } from "@/components/pwa/install-card";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,6 +26,8 @@ function Dashboard() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <GreetingHeader />
+
+      <InstallCard />
 
       <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
