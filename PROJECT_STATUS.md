@@ -3,7 +3,7 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-26 (Parte 8 implementada)
+Última actualización: 2026-11-26 (Parte 9 implementada)
 Commit de referencia: ver `git log` (rama `main`)
 Rama: `main`
 
@@ -238,6 +238,21 @@ Reglas de arquitectura:
 - **Puesta en marcha (la hace el usuario):** `docs/recordatorios-setup.md`. No se pudo probar
   la entrega real de push desde aquí.
 
+### Ajustes (Parte 9)
+
+- Ruta `/ajustes` (se entra desde el avatar, en la barra lateral y en la cabecera móvil):
+  - **Perfil:** nombre y zona horaria (`updateProfile` en `auth-store`; botón "usar la del dispositivo").
+  - **Avisos:** activar/desactivar en este dispositivo.
+  - **Tus datos:** exportar copia `.json` e importar (`src/lib/backup.ts`, validación estricta
+    campo a campo con los límites de la base de datos; lo inválido se omite y se cuenta). Los ids
+    se conservan si la copia es de la misma cuenta y, si no, se derivan de forma estable
+    (importar dos veces no duplica; importar nunca borra).
+  - **Zona de peligro:** cerrar sesión y borrar la cuenta (confirmando con "ELIMINAR"). El borrado
+    usa la función `delete_own_account` de `docs/supabase-account.sql` (**pendiente de aplicar
+    por el usuario**) y limpia copia, cola e importación local y los avisos del dispositivo.
+- **Aplazado:** categorías propias (exige tabla, tokens de color dinámicos y cambiar los CHECK de
+  la base de datos; se valorará aparte).
+
 ### Backend (Parte 1)
 
 - Cliente único de Supabase en `src/services/supabase-client.ts`, creado de forma
@@ -290,8 +305,8 @@ Las siguientes partes:
 6. **Parte 8 — Recordatorios:** ✅ implementada (código, función y guía). Pendiente que el
    usuario aplique el SQL, cree claves, despliegue la función y pruebe en dispositivos
    (`docs/recordatorios-setup.md`). iOS requiere PWA instalada.
-7. **Parte 9 — Ajustes:** perfil, zona horaria, exportar/importar JSON, categorías
-   propias, borrado de cuenta.
+7. **Parte 9 — Ajustes:** ✅ perfil, zona horaria, avisos, exportar/importar JSON y borrado de
+   cuenta. Aplazadas las categorías propias. Falta aplicar `docs/supabase-account.sql`.
 8. **Parte 10 — Calidad/seguridad:** validación con `zod` en servidor, tests de RLS,
    rate limiting, E2E con Playwright, accesibilidad, lint normalizado.
 9. **Parte 11 — Producción:** dominio, entornos, backups, monitorización, CI/CD,
@@ -485,6 +500,14 @@ Prueba manual de la PWA (solo en el despliegue, con HTTPS; el service worker no 
 11. Con la app cerrada más de una hora y sin red, abrirla: no debe pedir iniciar sesión.
 12. Cerrar sesión: en `localStorage` desaparece `orgrow:v1:cache:<id>`.
 
+Prueba manual de ajustes (tras ejecutar `docs/supabase-account.sql` y su verificación):
+
+- En `/ajustes`: cambiar nombre y zona horaria, recargar y comprobar que persisten y que el
+  saludo usa el nombre.
+- Exportar, editar algo, importar el archivo: vuelve a su estado sin duplicados. Probar con un
+  JSON roto o ajeno: error claro.
+- Con una cuenta de prueba, borrarla: debe llevar a `/acceso` y no poder volver a entrar.
+
 Prueba manual de recordatorios: ver el apartado 6 de `docs/recordatorios-setup.md`.
 
 Antes de subir a internet: `npm audit`, `npm run build` y revisar que `git status` no
@@ -505,7 +528,7 @@ muestra `.env*` (solo `.env.example`).
 | 5 — Notas completas | ✅ completada | ver `git log` |
 | 7 — PWA y offline | ✅ implementada, falta prueba en dispositivos | ver `git log` |
 | 8 — Recordatorios | ✅ implementada, falta puesta en marcha y prueba | ver `git log` |
-| 9 — Ajustes y datos | ⏳ pendiente | — |
+| 9 — Ajustes y datos | ✅ implementada (sin categorías propias), falta aplicar SQL y probar | ver `git log` |
 | 10 — Calidad y seguridad | ⏳ pendiente | — |
 | 11 — Producción | ⏳ pendiente | — |
 
