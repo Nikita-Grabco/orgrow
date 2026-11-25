@@ -285,9 +285,9 @@ describe("hábitos", () => {
 });
 
 describe("registros de hábito", () => {
-  it("lee un registro con value numérico", () => {
+  it("lee un registro con value numérico y lo identifica por hábito y día", () => {
     expect(habitLogFromRow({ id: "l1", habit_id: "h1", log_date: "2026-11-25", value: "0.50" })).toEqual({
-      id: "l1",
+      id: "h1:2026-11-25",
       habitId: "h1",
       date: "2026-11-25",
       value: 0.5,

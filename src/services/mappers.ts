@@ -13,6 +13,7 @@
  *  - `user_id`, `created_at` y `updated_at` los rellena el servidor al escribir.
  */
 
+import { habitLogId } from "@/services/habits-repository";
 import type {
   Activity,
   ActivityPatch,
@@ -328,7 +329,9 @@ export function habitToUpdate(patch: HabitPatch) {
 
 export function habitLogFromRow(row: HabitLogRow): HabitLog {
   return {
-    id: row.id,
+    // El dominio identifica un registro por hábito y día (igual que en local);
+    // el uuid de la fila no sale de aquí.
+    id: habitLogId(row.habit_id, row.log_date),
     habitId: row.habit_id,
     date: row.log_date,
     value: numberFromDb(row.value),

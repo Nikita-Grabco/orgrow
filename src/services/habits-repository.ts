@@ -27,6 +27,12 @@ export function habitLogId(habitId: string, date: string): string {
   return `${habitId}:${date}`;
 }
 
+/** Inverso de `habitLogId`. Los ids de hábito no contienen ":", así que vale el último. */
+export function parseHabitLogId(id: string): { habitId: string; date: string } {
+  const separator = id.lastIndexOf(":");
+  return { habitId: id.slice(0, separator), date: id.slice(separator + 1) };
+}
+
 function positive(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
 }

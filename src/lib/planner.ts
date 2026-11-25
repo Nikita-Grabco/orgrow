@@ -181,6 +181,14 @@ export function applyActivityPatch(activity: Activity, patch: ActivityPatch): Ac
   };
 }
 
+/**
+ * Id nuevo para cualquier entidad. Es un `uuid` porque las columnas `id` de la
+ * base de datos lo son y el cliente genera el id antes de guardar (la UI
+ * optimista necesita conocerlo). El prefijo solo se usa en el respaldo para
+ * entornos sin `crypto.randomUUID`.
+ */
 export function createId(prefix: string): string {
+  const uuid = globalThis.crypto?.randomUUID?.();
+  if (uuid) return uuid;
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
