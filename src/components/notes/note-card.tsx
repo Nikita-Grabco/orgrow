@@ -1,16 +1,91 @@
-import { ListPlus, Pin, PinOff, Trash2 } from "lucide-react";
+import { Check, ListPlus, Pencil, Pin, PinOff, Trash2, X } from "lucide-react";
+import { useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 
+import { Chip } from "@/components/common/chip";
 import { Button } from "@/components/ui/button";
-import { NOTE_KINDS } from "@/config/categories";
+import { NOTE_KIND_IDS, NOTE_KINDS } from "@/config/categories";
 import { cn } from "@/lib/utils";
 import { usePlanner } from "@/store/planner-store";
-import type { Note } from "@/types/planner";
+import type { Note, NoteKind } from "@/types/planner";
 
 export function NoteCard({ note, compact = false }: { note: Note; compact?: boolean }) {
-  const { togglePinNote, deleteNote, convertNoteToTask } = usePlanner();
+  const { togglePinNote, deleteNote, convertNoteToTask, editNote } = usePlanner();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(note.content);
+  const [draftKind, setDraftKind] = useState<NoteKind>(note.kind);
+
   const kind = NOTE_KINDS[note.kind];
   const Icon = kind.icon;
+
+  function startEditing() {
+    // Siempre se parte de lo guardado: un borrador abandonado no reaparece.
+    setDraft(note.content);
+    setDraftKind(note.kind);
+    setEditing(true);
+  }
+
+  function cancel() {
+    setEditing(false);
+  }
+
+  function save() {
+    if (!draft.trim()) return;
+    const changed = draft.trim() !== note.content || draftKind !== note.kind;
+    if (!changed) {
+      setEditing(false);
+      return;
+    }
+    if (editNote(note.id, { content: draft, kind: draftKind })) {
+      setEditing(false);
+      toast.success("Nota actualizada");
+    }
+  }
+
+  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      save();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      cancel();
+    }
+  }
+
+  if (editing && !compact) {
+    return (
+      <article className="mb-4 break-inside-avoid rounded-2xl border border-primary/40 bg-card p-4 shadow-soft sm:p-5">
+        <textarea
+          autoFocus
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={onKeyDown}
+          rows={4}
+          aria-label="Editar nota"
+          className="w-full resize-none bg-transparent text-[15px] leading-relaxed text-foreground focus:outline-none"
+        />
+        <div className="mt-3 flex gap-1.5 overflow-x-auto">
+          {NOTE_KIND_IDS.map((id) => {
+            const KindIcon = NOTE_KINDS[id].icon;
+            return (
+              <Chip key={id} selected={draftKind === id} onClick={() => setDraftKind(id)}>
+                <KindIcon className="size-3" />
+                {NOTE_KINDS[id].label}
+              </Chip>
+            );
+          })}
+        </div>
+        <div className="mt-3 flex items-center justify-end gap-1">
+          <Button variant="ghost" size="sm" onClick={cancel}>
+            <X /> Cancelar
+          </Button>
+          <Button size="sm" onClick={save} disabled={!draft.trim()}>
+            <Check /> Guardar
+          </Button>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article
@@ -27,7 +102,7 @@ export function NoteCard({ note, compact = false }: { note: Note; compact?: bool
         </span>
         {note.pinned && <Pin className={cn("size-3.5 fill-current", kind.ink)} aria-label="Fijada" />}
       </div>
-      <p className={cn("mt-2 text-foreground", compact ? "line-clamp-2 text-sm" : "text-[15px] leading-relaxed")}>
+      <p className={cn("mt-2 whitespace-pre-line text-foreground", compact ? "line-clamp-2 text-sm" : "text-[15px] leading-relaxed")}>
         {note.content}
       </p>
 
@@ -42,6 +117,9 @@ export function NoteCard({ note, compact = false }: { note: Note; compact?: bool
             }}
           >
             <ListPlus /> A tarea
+          </Button>
+          <Button variant="ghost" size="icon-sm" aria-label="Editar nota" onClick={startEditing}>
+            <Pencil />
           </Button>
           <Button
             variant="ghost"

@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 import { toISODate } from "@/lib/dates";
 import { roundValue } from "@/lib/habits";
-import { applyActivityPatch, applyTaskPatch, createId } from "@/lib/planner";
+import { applyActivityPatch, applyNotePatch, applyTaskPatch, createId } from "@/lib/planner";
 import { habitLogId } from "@/services/habits-repository";
 import {
   createLocalPlannerRepositories,
@@ -29,6 +29,7 @@ import type {
   NewNoteInput,
   NewTaskInput,
   Note,
+  NotePatch,
   Task,
   TaskPatch,
 } from "@/types/planner";
@@ -83,6 +84,8 @@ interface PlannerContextValue {
   setHabitValue: (habitId: string, date: string, value: number) => void;
 
   addNote: (input: NewNoteInput) => void;
+  /** Cambia texto o tipo. Un texto vacío se ignora y devuelve `false`. */
+  editNote: (id: string, patch: NotePatch) => boolean;
   togglePinNote: (id: string) => void;
   deleteNote: (id: string) => void;
   convertNoteToTask: (id: string) => void;
@@ -447,18 +450,29 @@ export function PlannerProvider({
     [notesRepo, reportPersistError],
   );
 
-  const togglePinNote = useCallback(
-    (id: string) => {
+  const editNote = useCallback(
+    (id: string, patch: NotePatch): boolean => {
       const note = notes.find((item) => item.id === id);
-      if (!note) return;
+      if (!note) return false;
 
-      const updated: Note = { ...note, pinned: !note.pinned };
+      const updated = applyNotePatch(note, patch);
+      if (!updated) return false;
+
       setNotes((prev) => prev.map((item) => (item.id === id ? updated : item)));
       void notesRepo
         .update(updated)
-        .catch((error: unknown) => reportPersistError("No se pudo actualizar la nota", error));
+        .catch((error: unknown) => reportPersistError("No se pudo guardar la nota", error));
+      return true;
     },
     [notes, notesRepo, reportPersistError],
+  );
+
+  const togglePinNote = useCallback(
+    (id: string) => {
+      const note = notes.find((item) => item.id === id);
+      if (note) editNote(id, { pinned: !note.pinned });
+    },
+    [notes, editNote],
   );
 
   const deleteNote = useCallback(
@@ -552,6 +566,7 @@ export function PlannerProvider({
       deleteHabit,
       setHabitValue,
       addNote,
+      editNote,
       togglePinNote,
       deleteNote,
       convertNoteToTask,
@@ -587,6 +602,7 @@ export function PlannerProvider({
       deleteHabit,
       setHabitValue,
       addNote,
+      editNote,
       togglePinNote,
       deleteNote,
       convertNoteToTask,

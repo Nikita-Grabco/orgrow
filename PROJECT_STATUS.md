@@ -3,7 +3,7 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-26 (Parte 4 implementada)
+Última actualización: 2026-11-26 (Parte 5 completada)
 Commit de referencia: ver `git log` (rama `main`)
 Rama: `main`
 
@@ -151,6 +151,10 @@ Reglas de arquitectura:
 
 ### Notas
 - Crear (idea / por hacer / recordatorio), fijar, eliminar, convertir en tarea.
+- **Editar** texto y tipo en la propia tarjeta (lápiz; Enter guarda, Escape cancela;
+  no se permite dejarla vacía).
+- **Buscar** en `/notas` sin distinguir mayúsculas ni acentos y con todas las palabras
+  en cualquier orden; los contadores de los chips respetan la búsqueda.
 - Filtros por tipo en `/notas`.
 
 ### Agenda (Parte 6, completa en local)
@@ -235,7 +239,7 @@ Las siguientes partes:
 2. **Parte 4 — Datos en servidor:** ✅ implementada (tareas, notas, actividades y
    hábitos). Repositorios de Supabase, importación única de datos locales y recarga al
    volver a la app. Pendiente solo la **prueba manual con dos dispositivos**.
-3. **Parte 5 — Notas:** editar, buscar, filtros y persistencia en servidor.
+3. **Parte 5 — Notas:** ✅ editar, buscar y filtrar hechos; persistencia en servidor con la Parte 4.
 4. **Parte 6 — Agenda real:** ✅ hecha en local; solo falta el repositorio Supabase
    (va con la Parte 4).
 5. **Parte 7 — PWA:** instalable, service worker, offline y cola de escrituras.
@@ -341,7 +345,7 @@ históricas, adjuntos.
    la frase "Empecemos con calma" como texto, no como marca.
 4. ~~**`next-up-card` y `upcoming-activities` con datos de ejemplo**~~ ✅ Resuelto en
    la Parte 6: leen actividades reales del store.
-5. **Notas:** no se pueden editar ni buscar; no hay persistencia remota.
+5. ~~Notas sin editar ni buscar~~ ✅ Resuelto en la Parte 5.
 6. ~~**Agenda:** actividades de solo lectura.~~ ✅ Resuelto en la Parte 6: CRUD
    completo y vistas Día/Semana/Mes. Falta solo la persistencia en servidor.
 7. Avisos del build/lint a vigilar (no bloquean): `__dirname` en `vitest.config.ts`
@@ -407,7 +411,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=
 
 ## 10. Siguiente paso exacto
 
-**Cerrar la Parte 4 con una prueba manual**, y después la **Parte 5 — Notas completas**.
+**Cerrar las Partes 4 y 5 con una prueba manual**, y después la **Parte 7 — PWA y offline**.
 
 Prueba manual (hace falta una cuenta real confirmada):
 
@@ -418,7 +422,7 @@ Prueba manual (hace falta una cuenta real confirmada):
 4. En el SQL Editor: `select count(*) from tasks;` ≠ 0 y, sin sesión, `permission denied`.
 5. Si había datos propios en `localStorage`, deben haberse subido una vez (aviso en pantalla).
 
-**Parte 5 — Notas:** editar notas, buscar y filtrar. La persistencia ya está.
+6. En `/notas`: editar una nota con el lápiz, buscar "telefono" y encontrar "teléfono".
 
 Antes de subir a internet: `npm audit`, `npm run build` y revisar que `git status` no
 muestra `.env*` (solo `.env.example`).
@@ -435,7 +439,7 @@ muestra `.env*` (solo `.env.example`).
 | 6 — Agenda real (en local) | ✅ completada | ver `git log` |
 | 3 — Esquema y RLS | ✅ completada y verificada | ver `git log` |
 | 4 — Datos en servidor | ✅ implementada, falta prueba manual | ver `git log` |
-| 5 — Notas completas | ⏳ pendiente | — |
+| 5 — Notas completas | ✅ completada | ver `git log` |
 | 7 — PWA y offline | ⏳ pendiente | — |
 | 8 — Recordatorios | ⏳ pendiente | — |
 | 9 — Ajustes y datos | ⏳ pendiente | — |
