@@ -1,8 +1,15 @@
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
+import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { Brand } from "@/components/layout/brand";
+import { importLocalDataOnce } from "@/services/local-import";
+import { getSupabaseClient } from "@/services/supabase-client";
+import {
+  createSupabasePlannerRepositories,
+  importPlannerData,
+} from "@/services/supabase-repositories";
 import { PlannerProvider } from "@/store/planner-store";
 import { useAuth } from "@/store/auth-store";
 
@@ -74,8 +81,42 @@ export function AuthGate() {
 
   if (status !== "authenticated") return <AuthSplash />;
 
+  return <AuthenticatedApp />;
+}
+
+/**
+ * La app con sesión: los datos viven en el servidor (Supabase), protegidos por
+ * RLS para la cuenta actual. Al cambiar de cuenta el `key` descarta todo el estado.
+ */
+function AuthenticatedApp() {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+
+  const repositories = useMemo(() => createSupabasePlannerRepositories(getSupabaseClient()), []);
+
+  // Primera vez en este dispositivo: sube lo que el usuario ya tenía guardado en local.
+  const importLocalData = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const total = await importLocalDataOnce(userId, (payload) =>
+        importPlannerData(getSupabaseClient(), payload),
+      );
+      if (total > 0) {
+        toast.success(`Hemos subido a tu cuenta ${total} elementos guardados en este dispositivo`);
+      }
+    } catch (error) {
+      console.error("[orgrow] No se pudieron importar los datos locales", error);
+      toast.error("No se pudieron subir tus datos de este dispositivo. Lo reintentaremos.");
+    }
+  }, [userId]);
+
   return (
-    <PlannerProvider>
+    <PlannerProvider
+      key={userId ?? "anonymous"}
+      repositories={repositories}
+      beforeLoad={importLocalData}
+      syncOnFocus
+    >
       <AppShell>
         <Outlet />
       </AppShell>

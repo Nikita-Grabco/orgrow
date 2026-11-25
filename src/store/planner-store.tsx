@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -12,14 +13,11 @@ import { toast } from "sonner";
 import { toISODate } from "@/lib/dates";
 import { roundValue } from "@/lib/habits";
 import { applyActivityPatch, applyTaskPatch, createId } from "@/lib/planner";
-import { createLocalActivitiesRepository } from "@/services/activities-repository";
+import { habitLogId } from "@/services/habits-repository";
 import {
-  createLocalHabitLogsRepository,
-  createLocalHabitsRepository,
-  habitLogId,
-} from "@/services/habits-repository";
-import { createLocalNotesRepository } from "@/services/notes-repository";
-import { createLocalTasksRepository } from "@/services/tasks-repository";
+  createLocalPlannerRepositories,
+  type PlannerRepositories,
+} from "@/services/supabase-repositories";
 import type {
   Activity,
   ActivityPatch,
@@ -125,12 +123,37 @@ const CLOSED_ACTIVITY_DIALOG: ActivityDialogState = {
 
 const CLOSED_HABIT_DIALOG: HabitDialogState = { open: false, mode: "create", habitId: null };
 
-export function PlannerProvider({ children }: { children: ReactNode }) {
-  const tasksRepo = useMemo(createLocalTasksRepository, []);
-  const notesRepo = useMemo(createLocalNotesRepository, []);
-  const activitiesRepo = useMemo(createLocalActivitiesRepository, []);
-  const habitsRepo = useMemo(createLocalHabitsRepository, []);
-  const habitLogsRepo = useMemo(createLocalHabitLogsRepository, []);
+/** Un dispositivo que vuelve a primer plano tras este tiempo comprueba si hay cambios. */
+const RESYNC_AFTER_HIDDEN_MS = 5_000;
+
+interface PlannerProviderProps {
+  children: ReactNode;
+  /** Dónde se guardan los datos. Sin esto, en el navegador (`localStorage`). */
+  repositories?: PlannerRepositories;
+  /** Se espera antes de la primera carga (p. ej. importar datos antiguos). Si falla, se avisa y se sigue. */
+  beforeLoad?: () => Promise<void>;
+  /** Recarga los datos al volver a la app, para ver lo que se cambió en otro dispositivo. */
+  syncOnFocus?: boolean;
+}
+
+export function PlannerProvider({
+  children,
+  repositories,
+  beforeLoad,
+  syncOnFocus = false,
+}: PlannerProviderProps) {
+  const repos = useMemo(() => repositories ?? createLocalPlannerRepositories(), [repositories]);
+  const {
+    tasks: tasksRepo,
+    notes: notesRepo,
+    activities: activitiesRepo,
+    habits: habitsRepo,
+    habitLogs: habitLogsRepo,
+  } = repos;
+
+  // La función cambia en cada render del padre; la última es la que vale al cargar.
+  const beforeLoadRef = useRef(beforeLoad);
+  beforeLoadRef.current = beforeLoad;
 
   // Empty until hydrated: the server never reads localStorage, so the first
   // client render matches the server HTML and avoids hydration mismatches.
@@ -169,7 +192,17 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    loadAll()
+    const prepare = async () => {
+      try {
+        await beforeLoadRef.current?.();
+      } catch (error) {
+        // Importar es un extra: sin él la app debe seguir cargando lo que hay.
+        console.error("[orgrow] Falló la preparación previa a la carga", error);
+      }
+    };
+
+    prepare()
+      .then(loadAll)
       .then(([nextTasks, nextNotes, nextActivities, nextHabits, nextLogs]) => {
         if (!active) return;
         setTasks(nextTasks);
@@ -190,6 +223,28 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       active = false;
     };
   }, [loadAll]);
+
+  useEffect(() => {
+    if (!syncOnFocus || typeof document === "undefined") return;
+
+    let hiddenAt: number | null = null;
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        hiddenAt = Date.now();
+        return;
+      }
+      // Solo tras una ausencia real: así no se pisa un guardado que acaba de empezar.
+      if (hiddenAt !== null && Date.now() - hiddenAt >= RESYNC_AFTER_HIDDEN_MS) {
+        void reload().catch((error: unknown) =>
+          console.error("[orgrow] No se pudo sincronizar al volver a la app", error),
+        );
+      }
+      hiddenAt = null;
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [syncOnFocus, reload]);
 
   /** Optimistic updates roll back to the saved truth when persistence fails. */
   const reportPersistError = useCallback(
