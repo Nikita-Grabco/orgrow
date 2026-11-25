@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { Chip } from "@/components/common/chip";
 import { DatePickerField } from "@/components/common/date-picker-field";
+import { ReminderField } from "@/components/common/reminder-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,6 +18,7 @@ import { CATEGORIES, CATEGORY_IDS } from "@/config/categories";
 import { useToday } from "@/hooks/use-today";
 import { toISODate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
+import { isPushConfigured } from "@/services/push-service";
 import { usePlanner } from "@/store/planner-store";
 import type { Activity, CategoryId, NewActivityInput } from "@/types/planner";
 
@@ -46,6 +48,7 @@ function ActivityForm({ mode, activity, initialDate, onSubmit }: ActivityFormPro
   const [end, setEnd] = useState(activity?.end ?? "");
   const [location, setLocation] = useState(activity?.location ?? "");
   const [category, setCategory] = useState<CategoryId>(activity?.category ?? "personal");
+  const [remindBefore, setRemindBefore] = useState<number | null>(activity?.remindBefore ?? null);
 
   const invalidRange = Boolean(end) && end <= start;
 
@@ -61,6 +64,8 @@ function ActivityForm({ mode, activity, initialDate, onSubmit }: ActivityFormPro
       start,
       ...(end ? { end } : {}),
       ...(location.trim() ? { location: location.trim() } : {}),
+      // Sin recordatorios configurados no se toca el valor que ya tuviera la actividad.
+      ...(isPushConfigured() ? { remindBefore } : {}),
     });
   }
 
@@ -122,6 +127,8 @@ function ActivityForm({ mode, activity, initialDate, onSubmit }: ActivityFormPro
           className="h-10 rounded-xl"
         />
       </Field>
+
+      <ReminderField value={remindBefore} onChange={setRemindBefore} hasDate hasTime />
 
       <Field label="Categoría">
         <div className="flex flex-wrap gap-2">

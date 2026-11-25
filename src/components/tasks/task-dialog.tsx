@@ -3,6 +3,7 @@ import { toast } from "sonner";
 
 import { Chip } from "@/components/common/chip";
 import { DatePickerField } from "@/components/common/date-picker-field";
+import { ReminderField } from "@/components/common/reminder-field";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { CATEGORIES, CATEGORY_IDS, PRIORITIES, PRIORITY_IDS } from "@/config/categories";
 import { useToday } from "@/hooks/use-today";
 import { cn } from "@/lib/utils";
+import { isPushConfigured } from "@/services/push-service";
 import { usePlanner } from "@/store/planner-store";
 import type { CategoryId, NewTaskInput, Priority, Task } from "@/types/planner";
 
@@ -43,12 +45,21 @@ function TaskForm({ mode, task, initialDueDate, onSubmit }: TaskFormProps) {
   const [time, setTime] = useState(task?.time ?? "");
   const [category, setCategory] = useState<CategoryId>(task?.category ?? "personal");
   const [priority, setPriority] = useState<Priority>(task?.priority ?? "media");
+  const [remindBefore, setRemindBefore] = useState<number | null>(task?.remindBefore ?? null);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     const clean = title.trim();
     if (!clean) return;
-    onSubmit({ title: clean, dueDate, time: time || undefined, category, priority });
+    onSubmit({
+      title: clean,
+      dueDate,
+      time: time || undefined,
+      category,
+      priority,
+      // Sin recordatorios configurados no se toca el valor que ya tuviera la tarea.
+      ...(isPushConfigured() ? { remindBefore: dueDate ? remindBefore : null } : {}),
+    });
   }
 
   return (
@@ -75,6 +86,13 @@ function TaskForm({ mode, task, initialDueDate, onSubmit }: TaskFormProps) {
           className="h-10 w-36 rounded-xl"
         />
       </Field>
+
+      <ReminderField
+        value={dueDate ? remindBefore : null}
+        onChange={setRemindBefore}
+        hasDate={dueDate !== null}
+        hasTime={Boolean(time)}
+      />
 
       <Field label="Categoría">
         <div className="flex flex-wrap gap-2">

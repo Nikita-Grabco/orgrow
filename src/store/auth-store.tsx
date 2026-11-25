@@ -15,6 +15,7 @@ import type { Profile } from "@/services/mappers";
 import { clearOfflineCache, isRetryableError } from "@/services/offline-repositories";
 import { readStoredSession } from "@/services/offline-session";
 import { fetchOwnProfile } from "@/services/profile-repository";
+import { disablePush } from "@/services/push-service";
 import { getSupabaseClient, isSupabaseConfigured } from "@/services/supabase-client";
 
 /**
@@ -170,6 +171,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Lo que aún no se envió se conserva y se enviará al volver a entrar.
     const leavingUserId = session?.user.id;
     if (leavingUserId) clearOfflineCache(leavingUserId);
+
+    // Este dispositivo deja de recibir los avisos de la cuenta que se va. Si no hay red
+    // no se puede borrar el registro del servidor, pero el navegador ya queda dado de baja
+    // y el servidor lo descarta solo al ver que el aviso no llega.
+    await disablePush();
 
     try {
       const { error } = await getSupabaseClient().auth.signOut();
