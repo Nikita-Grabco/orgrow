@@ -3,8 +3,8 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-16 (Parte 2 completada)
-Commit de referencia: `44fba8e` (feat(backend): conectar cliente de Supabase — parte 1)
+Última actualización: 2026-11-25 (Parte 3 completada y verificada)
+Commit de referencia: ver `git log` (rama `main`)
 Rama: `main`
 
 ---
@@ -229,10 +229,9 @@ Parte 3 porque el usuario la pidió antes.
 
 Las siguientes partes:
 
-1. **Parte 3 — Esquema y RLS:** 📝 redactado en `docs/supabase-schema.sql` (6 tablas:
-   `profiles`, `tasks`, `notes`, `activities`, `habits`, `habit_logs`, con índices y RLS).
-   Probado en un Postgres local de prueba; **pendiente de aplicar** en Supabase (por
-   Lovable o desde el SQL Editor) y de ejecutar sus comprobaciones finales.
+1. **Parte 3 — Esquema y RLS:** ✅ aplicada en Supabase y verificada (`docs/supabase-schema.sql`:
+   6 tablas con índices y RLS). La UI ya lee el nombre de `profiles` y existe el mapeo
+   `snake_case` ↔ `camelCase` en `src/services/mappers.ts`.
 2. **Parte 4 — Tareas en servidor:** repositorio Supabase, TanStack Query, importación
    de los datos locales, sincronización entre dispositivos.
 3. **Parte 5 — Notas:** editar, buscar, filtros y persistencia en servidor.
@@ -304,7 +303,7 @@ históricas, adjuntos.
 ### Base de datos
 - ✅ Proyecto de Supabase creado (región UE) y accesible: el endpoint REST responde
   y rechaza tablas inexistentes con `PGRST205`, lo que confirma que la clave es válida.
-- ❌ **Aún no hay tablas ni políticas RLS** (Parte 3).
+- ✅ **Parte 3 aplicada y verificada:** 6 tablas con RLS en el proyecto real. Sin sesión (`anon`) todo responde `permission denied`; con dos usuarios, ninguno ve ni toca filas del otro; el trigger crea el perfil con el nickname.
 - Datos en `localStorage` del navegador (por dispositivo, sin sincronización).
 - No existe carpeta `supabase/` ni migraciones. **El esquema se gestiona desde el
   panel de Supabase**, no con migraciones a mano en el repo.
@@ -393,23 +392,20 @@ VITE_SUPABASE_PUBLISHABLE_KEY=
 
 ## 10. Siguiente paso exacto
 
-**Parte 3 — Esquema de datos y seguridad (RLS).**
+**Parte 4 — Datos en servidor (tareas, notas, actividades y hábitos).**
 
-1. Crear en el panel de Supabase (SQL Editor) las tablas `profiles`, `tasks`, `notes`
-   y `activities`, con `user_id uuid` → `auth.users(id)`, índices por `(user_id,
-   due_date)` y timestamps.
-2. Activar **RLS** en las cuatro y añadir políticas `select/insert/update/delete`
-   limitadas a `auth.uid() = user_id`.
-3. Trigger que crea la fila de `profiles` al registrarse, y `display_name` real en la
-   UI (`useAuth` pasa a leer el perfil).
-4. Capa de mapeo `snake_case` (BD) ↔ `camelCase` (TS) en un único módulo.
-5. Probar con SQL que un usuario no puede leer filas de otro (`set role authenticated`
-   + `request.jwt.claims`).
+1. Repositorios de Supabase con la misma interfaz `list/create/update/remove` que los
+   de `localStorage`, usando `src/services/mappers.ts` (ya hecho) para traducir filas.
+2. Ids `uuid` generados en el cliente (`crypto.randomUUID`) para mantener la UI optimista.
+3. TanStack Query (instalado, sin usar) para carga, caché y sincronización.
+4. Importar los datos de `localStorage` la primera vez (ids nuevos) y avisar al usuario.
+5. Mantener el modo local si faltan las variables de entorno.
 
-**Criterio de terminado:** las tablas existen, RLS está activo y una consulta con la
-clave pública sin sesión devuelve 0 filas (no un error de permisos ni datos ajenos).
+**Criterio de terminado:** crear una tarea en un dispositivo y verla en otro con la
+misma cuenta; sin sesión no se lee ni se escribe nada.
 
-Después de esta parte: **Parte 4 — Tareas en servidor**.
+Antes de subir a internet: `npm audit`, `npm run build` y revisar que `git status` no
+muestra `.env*` (solo `.env.example`).
 
 ---
 
@@ -421,8 +417,8 @@ Después de esta parte: **Parte 4 — Tareas en servidor**.
 | 2 — Autenticación y perfiles | ✅ completada | `88fadbb` |
 | Marca Orgrow + nickname | ✅ completada | `829f326` |
 | 6 — Agenda real (en local) | ✅ completada | ver `git log` |
-| 3 — Esquema y RLS | ⏳ siguiente | — |
-| 4 — Tareas en servidor | ⏳ pendiente | — |
+| 3 — Esquema y RLS | ✅ completada y verificada | ver `git log` |
+| 4 — Datos en servidor | ⏳ siguiente | — |
 | 5 — Notas completas | ⏳ pendiente | — |
 | 7 — PWA y offline | ⏳ pendiente | — |
 | 8 — Recordatorios | ⏳ pendiente | — |
