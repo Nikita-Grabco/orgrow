@@ -3,7 +3,7 @@
 > Memoria permanente del proyecto. **Mantener actualizado al terminar cada funcionalidad importante.**
 > No incluir contraseñas, claves API ni datos sensibles.
 
-Última actualización: 2026-11-26 (Parte 11 preparada)
+Última actualización: 2026-11-26 (desplegada en Cloudflare; redirección https; ver "Despliegue y seguridad")
 Commit de referencia: ver `git log` (rama `main`)
 Rama: `main`
 
@@ -287,6 +287,50 @@ Reglas de arquitectura:
 - **No hecho:** E2E con Playwright y accesibilidad automática (necesitan despliegue y cuenta de
   prueba), Sentry y Capacitor (opcionales; ver `docs/produccion.md`).
 
+### Despliegue y seguridad (2026-11-26) — ✅ en línea
+
+**Hecho**
+- **Publicada en Cloudflare Workers Builds** desde GitHub `main` (cada push a `main` redespliega solo):
+  `https://nikita-grabco-orgrow.grabco04.workers.dev` (worker `nikita-grabco-orgrow`). Variables de
+  build `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` (la clave publicable es pública por
+  diseño; **nunca** poner la `secret`/`service_role`). Deploy: `npx wrangler deploy --config .output/server/wrangler.json`.
+- **Build roto por `bun.lock`:** Cloudflare elige el gestor según el lockfile y fallaba con
+  `bun install --frozen-lockfile`. Se borró `bun.lock`; solo queda `package-lock.json`.
+  (`bunfig.toml` ya no se usa.)
+- **Dependabot:** revisados los 7 PR. Fusionados: `actions/checkout`, `actions/setup-node`,
+  grupo minor-and-patch, `@vitejs/plugin-react` 6.3.0 y `globals` 17.14.0 (probados con tipos,
+  lint, tests, build y audit). **Descartados a propósito:** `eslint-plugin-react-hooks` 7.1.1 (rompe
+  el lint) y `recharts` 3.11.1 (rompe los tipos). Cerrarlos con `@dependabot ignore this major version`.
+- **Historial limpio:** se reescribió el historial para quitar `Co-Authored-By: Claude`; el único
+  autor es `Nikita-Grabco`. No volver a añadirlo ni reescribir historial ya publicado (Lovable).
+- **Auditoría del repo y del sitio:** sin secretos ni datos personales; la sonda anónima a Supabase
+  recibe `permission denied`; cabeceras de seguridad presentes en el sitio real. Falsos positivos
+  conocidos: `sb_secret_` (código de supabase-js) y "correo en autor" (bot de Dependabot).
+- **Redirección http→https:** `httpsRedirect()` en `src/lib/security-headers.ts`, llamada al inicio
+  de `fetch` en `src/server.ts` (308; no actúa en localhost, `*.localhost` ni `*.test`). Con pruebas.
+
+**Falta (seguridad y operación)**
+- [ ] **Cerrar el registro** en Supabase (Authentication → Sign In / Providers → desactivar
+      "Allow new users to sign up") ahora que solo hay una cuenta.
+- [ ] **2FA** en GitHub, Cloudflare y Supabase.
+- [ ] Supabase → **Advisors → Security** sin avisos; revisar límites de intentos (rate limits).
+- [ ] Aplicar `supabase-reminders.sql` y `supabase-account.sql` (si no están) y pasar
+      `supabase-security-tests.sql` (todo OK). Luego `docs/recordatorios-setup.md`.
+- [ ] **Activar la CSP:** mirar la consola en cada pantalla de la URL real; si no hay avisos, cambiar
+      `Content-Security-Policy-Report-Only` por `Content-Security-Policy`, actualizar su test y
+      decidir `frame-ancestors` (el editor de Lovable incrusta la app).
+- [ ] Decidir confirmación de email / SMTP propio (el integrado de Supabase tiene pocos envíos).
+- [ ] **Copias de seguridad:** el plan gratis no hace copias; usar Ajustes → Exportar y/o `pg_dump`.
+      Recordar que el proyecto gratis se pausa tras ~1 semana sin uso.
+- [ ] Monitor de disponibilidad (UptimeRobot o similar).
+- [ ] **Segundo proyecto de Supabase para desarrollo:** hoy desarrollo y producción comparten BD.
+      Trabajar en ramas: cada push a `main` despliega.
+- [ ] Comprobar la lista de Contributors de GitHub (puede seguir cacheada con Claude; si persiste,
+      pedirlo a GitHub Support).
+- [ ] Pruebas manuales de PWA en iPhone y tableta Android reales.
+- [ ] Pendientes de producto: categorías propias, revisión diaria/semanal, objetivos a largo plazo,
+      temporizador de enfoque, E2E con Playwright y accesibilidad.
+
 ### Backend (Parte 1)
 
 - Cliente único de Supabase en `src/services/supabase-client.ts`, creado de forma
@@ -509,6 +553,10 @@ VITE_VAPID_PUBLIC_KEY=   # opcional: solo la clave PÚBLICA de los avisos push
 
 ## 10. Siguiente paso exacto
 
+**Primero (la app ya está en línea):** cerrar el registro en Supabase, activar 2FA, pasar Advisors y
+las pruebas SQL, y activar la CSP; lista completa en la sección 4 → "Despliegue y seguridad".
+Después, lo que sigue de abajo.
+
 **Cerrar las Partes 4, 5, 7 y 8 con pruebas manuales** y después la **Parte 9 — Ajustes**.
 Para la Parte 8, seguir `docs/recordatorios-setup.md` (SQL, claves, función, cron, prueba).
 
@@ -567,7 +615,7 @@ muestra `.env*` (solo `.env.example`).
 | 8 — Recordatorios | ✅ implementada, falta puesta en marcha y prueba | ver `git log` |
 | 9 — Ajustes y datos | ✅ implementada (sin categorías propias), falta aplicar SQL y probar | ver `git log` |
 | 10 — Calidad y seguridad | ✅ implementada, falta ejecutar las pruebas SQL | ver `git log` |
-| 11 — Producción | ✅ preparada (CI y guía); falta despliegue real | ver `git log` |
+| 11 — Producción | ✅ desplegada en Cloudflare; faltan los pendientes de seguridad (sección 4, "Despliegue y seguridad") | ver `git log` |
 
 ---
 

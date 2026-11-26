@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { CSP_VALUE, withSecurityHeaders } from "@/lib/security-headers";
+import { CSP_VALUE, httpsRedirect, withSecurityHeaders } from "@/lib/security-headers";
 
 describe("withSecurityHeaders", () => {
   it("añade las cabeceras y conserva cuerpo, estado y cabeceras existentes", async () => {
@@ -41,5 +41,21 @@ describe("withSecurityHeaders", () => {
       "https://orgrow.test/",
     );
     expect(out.headers.get("referrer-policy")).toBe("no-referrer");
+  });
+});
+
+describe("httpsRedirect", () => {
+  it("redirige http a https conservando ruta y parámetros", () => {
+    const out = httpsRedirect("http://orgrow.example.com/habitos?x=1");
+    expect(out?.status).toBe(308);
+    expect(out?.headers.get("location")).toBe("https://orgrow.example.com/habitos?x=1");
+  });
+
+  it("no toca https ni el desarrollo local", () => {
+    expect(httpsRedirect("https://orgrow.example.com/")).toBeNull();
+    expect(httpsRedirect("http://localhost:3000/")).toBeNull();
+    expect(httpsRedirect("http://127.0.0.1:3000/")).toBeNull();
+    expect(httpsRedirect("http://app.localhost/")).toBeNull();
+    expect(httpsRedirect("no es una url")).toBeNull();
   });
 });
