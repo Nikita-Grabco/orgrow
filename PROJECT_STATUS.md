@@ -61,9 +61,9 @@ proyecto es `@supabase/supabase-js` (Parte 1).
     temporal (cuando `typescript-eslint` suba a minimatch 11 nativo, se puede quitar).
 - `zod` se **eliminó** de las dependencias directas (no se usaba). Las dependencias
   internas de TanStack ya traen `zod@4.6.7`.
-- **Dos lockfiles:** `bun.lock` (versionado, de la plantilla de Lovable) y
-  `package-lock.json` (generado con npm). `bun` no está instalado; `bun.lock` está
-  desactualizado respecto a `package.json`.
+- **Un solo lockfile:** `package-lock.json` (npm). Se eliminó `bun.lock` porque estaba
+  desactualizado y Cloudflare, al detectarlo, ejecutaba `bun install --frozen-lockfile` y el
+  build fallaba. Con solo `package-lock.json` usa `npm ci`, igual que el CI de GitHub.
 
 ---
 
@@ -433,9 +433,8 @@ históricas, adjuntos.
    errores `prettier/prettier` porque los archivos están en CRLF y Prettier espera LF.
    No vienen del código ni de dependencias. Solución propuesta: `npm run format` o
    `"endOfLine": "auto"` en `.prettierrc` (commit aparte por el tamaño del diff).
-2. **Dos lockfiles.** `bun.lock` (Lovable) y `package-lock.json` (npm). `bun` no está
-   instalado, así que `bun.lock` no refleja los cambios de dependencias. Decidir un
-   único gestor antes de producción.
+2. ~~**Dos lockfiles.**~~ ✅ Resuelto: solo queda `package-lock.json`. No vuelvas a añadir
+   `bun.lock`: Dependabot y el CI trabajan con npm y el build de Cloudflare fallaría.
 3. ~~**Nombre de la app.**~~ ✅ Resuelto: la marca, los títulos de página y el
    favicon pendiente dicen **Orgrow** (el manifest llega en la Parte 7). Se mantiene
    la frase "Empecemos con calma" como texto, no como marca.
