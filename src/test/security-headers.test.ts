@@ -44,6 +44,29 @@ describe("withSecurityHeaders", () => {
   });
 });
 
+describe("X-Frame-Options", () => {
+  const frame = (url: string) =>
+    withSecurityHeaders(new Response("x"), url).headers.get("X-Frame-Options");
+
+  it("impide incrustar la app en el dominio real", () => {
+    expect(frame("https://nikita-grabco-orgrow.grabco04.workers.dev/")).toBe("DENY");
+  });
+
+  it("no lo pone en local ni en las vistas previas de Lovable", () => {
+    expect(frame("http://localhost:5173/")).toBeNull();
+    expect(frame("https://algo.lovable.app/")).toBeNull();
+    expect(frame("https://id.lovableproject.com/")).toBeNull();
+  });
+
+  it("no pisa el valor que ya venía", () => {
+    const response = withSecurityHeaders(
+      new Response("x", { headers: { "X-Frame-Options": "SAMEORIGIN" } }),
+      "https://ejemplo.dev/",
+    );
+    expect(response.headers.get("X-Frame-Options")).toBe("SAMEORIGIN");
+  });
+});
+
 describe("httpsRedirect", () => {
   it("redirige http a https conservando ruta y parámetros", () => {
     const out = httpsRedirect("http://orgrow.example.com/habitos?x=1");

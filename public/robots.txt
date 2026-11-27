@@ -1,14 +1,3 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
+# Orgrow es una app privada: no hay nada que indexar.
 User-agent: *
-Allow: /
+Disallow: /

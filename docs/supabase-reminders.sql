@@ -48,6 +48,7 @@ create or replace function public.reminder_default_time()
 returns time
 language sql
 immutable
+set search_path = ''
 as $$ select time '09:00' $$;
 
 -- Instante (UTC) de un aviso: fecha + hora en la zona horaria del usuario, menos

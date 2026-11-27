@@ -2,6 +2,8 @@
  * Cabeceras de seguridad de las respuestas del servidor (HTML renderizado).
  *
  * - Las de bajo riesgo se aplican ya: nosniff, referrer, permisos del navegador y HSTS (solo https).
+ * - Nadie puede incrustar la app en un iframe (`X-Frame-Options: DENY`), salvo en desarrollo local
+ *   y en las vistas previas de Lovable, que sí la incrustan.
  * - La política CSP va en modo **informe** (`Report-Only`): el navegador avisa en la consola de lo
  *   que bloquearía sin romper nada. Se pasa a `Content-Security-Policy` en la Parte 11, cuando se
  *   haya comprobado en el dominio real (y decidido quién puede incrustar la app en un iframe:
@@ -40,6 +42,9 @@ export function withSecurityHeaders(response: Response, requestUrl: string): Res
   for (const [name, value] of Object.entries(STATIC_HEADERS)) {
     if (!headers.has(name)) headers.set(name, value);
   }
+  if (!headers.has("X-Frame-Options") && !allowsEmbedding(requestUrl)) {
+    headers.set("X-Frame-Options", "DENY");
+  }
   if (requestUrl.startsWith("https://") && !headers.has("Strict-Transport-Security")) {
     headers.set("Strict-Transport-Security", "max-age=31536000");
   }
@@ -52,6 +57,25 @@ export function withSecurityHeaders(response: Response, requestUrl: string): Res
 }
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/** Sufijos de las vistas previas del editor de Lovable, que incrusta la app en un iframe. */
+const EMBEDDING_HOST_SUFFIXES = [".lovable.app", ".lovableproject.com", ".lovable.dev"] as const;
+
+/** En local y en las vistas previas de Lovable la app puede ir en un iframe. */
+function allowsEmbedding(requestUrl: string): boolean {
+  let host: string;
+  try {
+    host = new URL(requestUrl).hostname;
+  } catch {
+    return true;
+  }
+  return (
+    LOCAL_HOSTS.has(host) ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".test") ||
+    EMBEDDING_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix))
+  );
+}
 
 /**
  * Si la petición llegó por http a un dominio real, devuelve una redirección permanente
