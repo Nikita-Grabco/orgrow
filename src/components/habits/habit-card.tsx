@@ -1,8 +1,10 @@
 import { Check, Minus, Pencil, Plus } from "lucide-react";
 
 import { HabitHeatmap } from "@/components/habits/habit-heatmap";
+import { HabitTimerButton } from "@/components/habits/habit-timer-button";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES } from "@/config/categories";
+import { isTimedHabit } from "@/lib/habit-timer";
 import {
   dayRatio,
   formatProgress,
@@ -117,6 +119,7 @@ export function HabitCard({ habit, index, dateISO, todayISO, onSelectDay }: Habi
                 />
               </div>
             </div>
+            {dateISO === todayISO && isTimedHabit(habit) && <HabitTimerButton habit={habit} />}
             <Button
               size="icon"
               onClick={() => setHabitValue(habit.id, dateISO, roundValue(value + habit.step))}

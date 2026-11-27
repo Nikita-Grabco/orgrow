@@ -9,6 +9,7 @@ import { WeekView } from "@/components/agenda/week-view";
 import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSwipeNav } from "@/hooks/use-swipe-nav";
 import { useToday } from "@/hooks/use-today";
 import {
   longDateLabel,
@@ -41,7 +42,7 @@ function AgendaPage() {
   const today = useToday();
   const todayISO = today ? toISODate(today) : null;
 
-  const [view, setView] = useState<AgendaViewId>("semana");
+  const [view, setView] = useState<AgendaViewId>("mes");
   // Anchor is any date inside the visible day/week/month; null means "today".
   const [anchor, setAnchorState] = useState<string | null>(null);
   const anchorISO = anchor ?? todayISO;
@@ -61,6 +62,8 @@ function AgendaPage() {
     else if (view === "semana") setAnchorState(shiftISODate(anchorISO, direction * 7));
     else setAnchorState(shiftISOMonths(anchorISO, direction));
   }
+
+  const swipe = useSwipeNav(step);
 
   const weekDates = anchorISO ? weekDatesISO(anchorISO) : [];
   const isToday =
@@ -106,37 +109,39 @@ function AgendaPage() {
         isToday={isToday}
       />
 
-      {!isReady || !anchorISO ? (
-        <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-2">
-          <Skeleton className="h-56 rounded-2xl" />
-          <Skeleton className="h-56 rounded-2xl" />
-        </div>
-      ) : view === "dia" ? (
-        <DayView
-          dateISO={anchorISO}
-          label={longDateLabel(anchorISO)}
-          activities={getActivitiesOn(activities, anchorISO)}
-          tasks={tasks.filter((task) => task.dueDate === anchorISO)}
-          onAddActivity={() => openAddActivity(anchorISO)}
-          onAddTask={() => openAddTask(anchorISO)}
-        />
-      ) : view === "semana" ? (
-        <WeekView
-          dates={weekDates}
-          activities={activities}
-          tasks={tasks}
-          todayISO={todayISO}
-          onSelectDay={selectDay}
-        />
-      ) : (
-        <MonthView
-          anchorISO={anchorISO}
-          activities={activities}
-          tasks={tasks}
-          todayISO={todayISO}
-          onSelectDay={selectDay}
-        />
-      )}
+      <div className="select-none space-y-6 sm:space-y-8" {...swipe}>
+        {!isReady || !anchorISO ? (
+          <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-2">
+            <Skeleton className="h-56 rounded-2xl" />
+            <Skeleton className="h-56 rounded-2xl" />
+          </div>
+        ) : view === "dia" ? (
+          <DayView
+            dateISO={anchorISO}
+            label={longDateLabel(anchorISO)}
+            activities={getActivitiesOn(activities, anchorISO)}
+            tasks={tasks.filter((task) => task.dueDate === anchorISO)}
+            onAddActivity={() => openAddActivity(anchorISO)}
+            onAddTask={() => openAddTask(anchorISO)}
+          />
+        ) : view === "semana" ? (
+          <WeekView
+            dates={weekDates}
+            activities={activities}
+            tasks={tasks}
+            todayISO={todayISO}
+            onSelectDay={selectDay}
+          />
+        ) : (
+          <MonthView
+            anchorISO={anchorISO}
+            activities={activities}
+            tasks={tasks}
+            todayISO={todayISO}
+            onSelectDay={selectDay}
+          />
+        )}
+      </div>
     </div>
   );
 }

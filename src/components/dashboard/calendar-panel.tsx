@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { useSwipeNav } from "@/hooks/use-swipe-nav";
+
 import { ActivityList } from "@/components/activities/activity-list";
 import { Chip } from "@/components/common/chip";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,9 @@ export function CalendarPanel() {
   const anchor = anchorISO ?? todayISO;
   const selected = selectedISO ?? todayISO;
   const dates = anchor ? monthGridISO(anchor) : [];
+  const swipe = useSwipeNav((direction) => {
+    if (anchor) setAnchorISO(shiftISOMonths(anchor, direction));
+  });
 
   const selectedActivities = getActivitiesOn(activities, selected);
   const isTodaySelected = selected !== null && selected === todayISO;
@@ -60,7 +65,7 @@ export function CalendarPanel() {
 
   return (
     <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-3">
-      <section className="surface min-w-0 p-3 sm:p-5 lg:col-span-2">
+      <section className="surface min-w-0 select-none p-3 sm:p-5 lg:col-span-2" {...swipe}>
         <div className="mb-3 flex items-center gap-2">
           <Button
             variant="outline"
@@ -123,7 +128,7 @@ export function CalendarPanel() {
                 aria-label={`Ver el día ${dayOfMonth(dateISO)}`}
                 aria-pressed={isSelected}
                 className={cn(
-                  "flex min-h-14 min-w-0 cursor-pointer flex-col gap-1 rounded-xl border border-transparent p-1 text-left transition-colors hover:border-border hover:bg-secondary/50 sm:min-h-24 sm:p-1.5",
+                  "flex min-h-14 min-w-0 cursor-pointer flex-col gap-1 rounded-xl border border-border/70 p-1 text-left transition-colors hover:border-primary/40 hover:bg-secondary/50 sm:min-h-24 sm:p-1.5",
                   !inMonth && "opacity-35",
                   isToday && "bg-primary-soft/40",
                   isSelected && "border-primary/60",

@@ -45,7 +45,7 @@ export function MonthView({ anchorISO, activities, tasks, todayISO, onSelectDay 
               onClick={() => onSelectDay(dateISO)}
               aria-label={`Ver el día ${dayOfMonth(dateISO)}`}
               className={cn(
-                "flex min-h-16 cursor-pointer flex-col gap-1 rounded-xl border border-transparent p-1.5 text-left transition-colors hover:border-border hover:bg-secondary/50 sm:min-h-24",
+                "flex min-h-16 cursor-pointer flex-col gap-1 rounded-xl border border-border/70 p-1.5 text-left transition-colors hover:border-primary/40 hover:bg-secondary/50 sm:min-h-24",
                 !inMonth && "opacity-35",
                 isToday && "border-primary/60 bg-primary-soft/40",
               )}

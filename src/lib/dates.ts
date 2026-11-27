@@ -4,6 +4,7 @@ import {
   differenceInCalendarDays,
   differenceInMinutes,
   format,
+  getDaysInMonth,
   isValid,
   parseISO,
   startOfDay,
@@ -174,4 +175,11 @@ export function formatCountdown(minutes: number): string {
   }
   const days = Math.floor(minutes / (24 * 60));
   return `en ${days} ${days === 1 ? "día" : "días"}`;
+}
+
+/** Todos los días del mes de `iso`, de "YYYY-MM-01" al último. */
+export function monthDatesISO(iso: string): string[] {
+  const first = startOfMonth(parseISODate(iso));
+  const count = getDaysInMonth(first);
+  return Array.from({ length: count }, (_, index) => toISODate(addDays(first, index)));
 }

@@ -4,8 +4,10 @@ import { useMemo } from "react";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { SectionCard } from "@/components/common/section-card";
+import { HabitTimerButton } from "@/components/habits/habit-timer-button";
 import { Button } from "@/components/ui/button";
 import { useToday } from "@/hooks/use-today";
+import { isTimedHabit } from "@/lib/habit-timer";
 import { toISODate } from "@/lib/dates";
 import {
   currentStreak,
@@ -77,6 +79,8 @@ export function TodayHabits() {
                   >
                     {done && <Check className="size-4" strokeWidth={3} />}
                   </button>
+                ) : isTimedHabit(habit) ? (
+                  <HabitTimerButton habit={habit} />
                 ) : (
                   <Button
                     variant="outline"
