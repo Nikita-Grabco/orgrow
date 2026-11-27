@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { CATEGORIES, CATEGORY_IDS } from "@/config/categories";
 import { useToday } from "@/hooks/use-today";
 import { toISODate } from "@/lib/dates";
+import { initialReminder } from "@/lib/default-reminder";
 import { cn } from "@/lib/utils";
 import { isPushConfigured } from "@/services/push-service";
 import { usePlanner } from "@/store/planner-store";
@@ -48,7 +49,9 @@ function ActivityForm({ mode, activity, initialDate, onSubmit }: ActivityFormPro
   const [end, setEnd] = useState(activity?.end ?? "");
   const [location, setLocation] = useState(activity?.location ?? "");
   const [category, setCategory] = useState<CategoryId>(activity?.category ?? "personal");
-  const [remindBefore, setRemindBefore] = useState<number | null>(activity?.remindBefore ?? null);
+  const [remindBefore, setRemindBefore] = useState<number | null>(
+    activity ? (activity.remindBefore ?? null) : initialReminder(),
+  );
 
   const invalidRange = Boolean(end) && end <= start;
 

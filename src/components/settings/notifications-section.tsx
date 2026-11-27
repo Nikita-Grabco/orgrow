@@ -1,7 +1,13 @@
+import { useState } from "react";
+
+import { Chip } from "@/components/common/chip";
 import { SettingsSection } from "@/components/settings/settings-section";
 import { Button } from "@/components/ui/button";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { REMINDER_OPTIONS } from "@/config/reminders";
+import { readDefaultReminder, writeDefaultReminder } from "@/lib/default-reminder";
 import type { PushStatus } from "@/lib/push";
+import { isPushConfigured } from "@/services/push-service";
 
 const TEXT: Record<PushStatus, string> = {
   on: "Este dispositivo recibe los avisos de tus tareas y actividades.",
@@ -17,6 +23,14 @@ const TEXT: Record<PushStatus, string> = {
 
 export function NotificationsSection() {
   const { status, busy, error, enable, disable } = usePushNotifications();
+  const [defaultReminder, setDefaultReminder] = useState<number | null>(() =>
+    typeof window === "undefined" ? null : readDefaultReminder(window.localStorage),
+  );
+
+  function chooseDefault(minutes: number | null) {
+    writeDefaultReminder(window.localStorage, minutes);
+    setDefaultReminder(minutes);
+  }
 
   return (
     <SettingsSection
@@ -38,6 +52,26 @@ export function NotificationsSection() {
         <Button variant="outline" disabled={busy} onClick={() => void disable()}>
           Desactivar en este dispositivo
         </Button>
+      )}
+      {isPushConfigured() && (
+        <div className="space-y-2">
+          <p className="eyebrow">Avisarme por defecto</p>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Aviso por defecto">
+            {REMINDER_OPTIONS.map((option) => (
+              <Chip
+                key={String(option.value)}
+                selected={defaultReminder === option.value}
+                onClick={() => chooseDefault(option.value)}
+              >
+                {option.label}
+              </Chip>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Se aplica a las tareas y actividades nuevas en este dispositivo; luego puedes cambiarlo
+            en cada una. Las tareas con fecha pero sin hora avisan a las 09:00.
+          </p>
+        </div>
       )}
     </SettingsSection>
   );

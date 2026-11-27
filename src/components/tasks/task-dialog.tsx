@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { CATEGORIES, CATEGORY_IDS, PRIORITIES, PRIORITY_IDS } from "@/config/categories";
 import { useToday } from "@/hooks/use-today";
+import { initialReminder } from "@/lib/default-reminder";
 import { cn } from "@/lib/utils";
 import { isPushConfigured } from "@/services/push-service";
 import { usePlanner } from "@/store/planner-store";
@@ -45,7 +46,9 @@ function TaskForm({ mode, task, initialDueDate, onSubmit }: TaskFormProps) {
   const [time, setTime] = useState(task?.time ?? "");
   const [category, setCategory] = useState<CategoryId>(task?.category ?? "personal");
   const [priority, setPriority] = useState<Priority>(task?.priority ?? "media");
-  const [remindBefore, setRemindBefore] = useState<number | null>(task?.remindBefore ?? null);
+  const [remindBefore, setRemindBefore] = useState<number | null>(
+    task ? (task.remindBefore ?? null) : initialReminder(),
+  );
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
