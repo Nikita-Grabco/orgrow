@@ -1,35 +1,24 @@
-import { Plus } from "lucide-react";
-
-import { PageHeader } from "@/components/common/page-header";
-import { Button } from "@/components/ui/button";
+import { WeatherWidget } from "@/components/dashboard/weather-widget";
 import { useToday } from "@/hooks/use-today";
 import { formatLongDate, getGreeting } from "@/lib/dates";
 import { useAuth } from "@/store/auth-store";
-import { usePlanner } from "@/store/planner-store";
 
 export function GreetingHeader() {
-  const { openAddTask } = usePlanner();
   const { displayName } = useAuth();
   const today = useToday();
 
   return (
-    <PageHeader
-      eyebrow={
-        <span className="inline-block min-h-[1em]">{today ? formatLongDate(today) : "\u00a0"}</span>
-      }
-      title={
-        <>
+    <header className="surface flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="min-w-0">
+        <h1 className="font-display font-semibold text-3xl leading-tight tracking-tight text-foreground sm:text-4xl">
           {today ? getGreeting(today.getHours()) : "Hola"},{" "}
           <em className="not-italic text-primary">{displayName}</em>
-        </>
-      }
-      description="Esto es lo que tienes por delante hoy."
-      actions={
-        <Button onClick={() => openAddTask()} size="lg" className="hidden md:inline-flex">
-          <Plus />
-          Nueva tarea
-        </Button>
-      }
-    />
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+          <span className="inline-block min-h-[1em]">{today ? formatLongDate(today) : " "}</span>
+        </p>
+      </div>
+      <WeatherWidget />
+    </header>
   );
 }

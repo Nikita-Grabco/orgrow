@@ -126,3 +126,22 @@ export function habitsForDay(habits: Habit[], iso: string): Habit[] {
     .filter((habit) => !habit.archived && isScheduledOn(habit, iso))
     .sort((a, b) => a.createdAt - b.createdAt);
 }
+
+/**
+ * Racha actual: días planificados seguidos con el hábito cumplido, hasta hoy.
+ * Si hoy aún no está cumplido no rompe la racha (todavía hay tiempo); los días
+ * que no tocan se saltan. Los hábitos "N veces por semana" no tienen racha.
+ */
+export function currentStreak(habit: Habit, index: HabitLogIndex, todayISO: string): number {
+  if (habit.frequency.type === "weekly") return 0;
+  let streak = 0;
+  let day = todayISO;
+  for (let i = 0; i < 366; i += 1) {
+    if (isScheduledOn(habit, day)) {
+      if (isDone(habit, logValue(index, habit.id, day))) streak += 1;
+      else if (day !== todayISO) break;
+    }
+    day = shiftISODate(day, -1);
+  }
+  return streak;
+}

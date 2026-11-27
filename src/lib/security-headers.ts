@@ -18,7 +18,8 @@ export const CSP_DIRECTIVES = [
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob:",
   // Supabase: API REST/Auth y Realtime.
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+  // Open-Meteo: tiempo y buscador de ciudades del inicio.
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://geocoding-api.open-meteo.com",
   "worker-src 'self'",
   "manifest-src 'self'",
   "object-src 'none'",

@@ -2,6 +2,7 @@ import {
   addDays,
   addMonths,
   differenceInCalendarDays,
+  differenceInMinutes,
   format,
   isValid,
   parseISO,
@@ -152,4 +153,25 @@ export function longDateLabel(iso: string): string {
 /** Etiqueta corta con el mes, para listas que cruzan meses. */
 export function shortDateLabel(iso: string): string {
   return capitalize(format(parseISODate(iso), "EEE d MMM", { locale: es }).replaceAll(".", ""));
+}
+
+/** Minutos hasta una fecha y hora locales ("YYYY-MM-DD" + "HH:mm"); negativo si ya pasó. */
+export function minutesUntil(dateISO: string, time: string, now: Date): number {
+  const [hours, minutes] = time.split(":").map(Number);
+  const target = new Date(parseISODate(dateISO));
+  target.setHours(hours ?? 0, minutes ?? 0, 0, 0);
+  return differenceInMinutes(target, now);
+}
+
+/** "en 2 h 15 min", "en 40 min", "ahora" o "en 3 días". */
+export function formatCountdown(minutes: number): string {
+  if (minutes <= 0) return "ahora";
+  if (minutes < 60) return `en ${minutes} min`;
+  if (minutes < 24 * 60) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m === 0 ? `en ${h} h` : `en ${h} h ${m} min`;
+  }
+  const days = Math.floor(minutes / (24 * 60));
+  return `en ${days} ${days === 1 ? "día" : "días"}`;
 }

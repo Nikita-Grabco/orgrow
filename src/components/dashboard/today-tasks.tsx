@@ -1,65 +1,47 @@
 import { ListChecks, Plus } from "lucide-react";
-import { useState } from "react";
 
-import { Chip } from "@/components/common/chip";
 import { SectionCard } from "@/components/common/section-card";
 import { TaskList } from "@/components/tasks/task-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToday } from "@/hooks/use-today";
 import { toISODate } from "@/lib/dates";
-import { getOverdueTasks, getTasksDueOn } from "@/lib/planner";
+import { getProgress, getProgressMessage, getTasksDueOn } from "@/lib/planner";
 import { usePlanner } from "@/store/planner-store";
+import { ProgressRing } from "./progress-ring";
 
-type Filter = "pendientes" | "hechas" | "todas";
-
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "pendientes", label: "Pendientes" },
-  { id: "hechas", label: "Hechas" },
-  { id: "todas", label: "Todas" },
-];
-
+/** Today's tasks with the completed percentage. */
 export function TodayTasks() {
   const { tasks, openAddTask, isReady } = usePlanner();
   const today = useToday();
-  const [filter, setFilter] = useState<Filter>("pendientes");
 
-  const todayISO = today ? toISODate(today) : null;
-  // Pending overdue tasks stay visible on the dashboard so they don't get lost.
-  const todaysTasks = [...getOverdueTasks(tasks, today), ...getTasksDueOn(tasks, todayISO)];
-  const visible = todaysTasks.filter((t) =>
-    filter === "todas" ? true : filter === "hechas" ? t.completed : !t.completed,
-  );
+  const todaysTasks = getTasksDueOn(tasks, today ? toISODate(today) : null);
+  const { total, completed, pending, percent } = getProgress(todaysTasks);
 
   return (
     <SectionCard title="Tareas de hoy" icon={<ListChecks />}>
       {!isReady ? (
-        <Skeleton className="h-28 rounded-2xl" />
+        <Skeleton className="h-40 rounded-2xl" />
       ) : (
         <>
-          <div className="-mt-1 mb-4 flex gap-2 overflow-x-auto pb-1">
-            {FILTERS.map((f) => (
-              <Chip key={f.id} selected={filter === f.id} onClick={() => setFilter(f.id)}>
-                {f.label}
-                <span className="tabular-nums opacity-70">
-                  {f.id === "todas"
-                    ? todaysTasks.length
-                    : todaysTasks.filter((t) => (f.id === "hechas" ? t.completed : !t.completed))
-                        .length}
-                </span>
-              </Chip>
-            ))}
+          <div className="mb-4 flex items-center gap-4">
+            <ProgressRing value={percent} size={88} stroke={9}>
+              <p className="text-xl font-bold tabular-nums text-foreground">{percent}%</p>
+            </ProgressRing>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">
+                {getProgressMessage(percent, total)}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {completed} de {total} hechas
+                {pending > 0 && ` · quedan ${pending}`}
+              </p>
+            </div>
           </div>
 
           <TaskList
-            tasks={visible}
-            emptyTitle={
-              filter === "pendientes" ? "¡Todo hecho por hoy!" : "Aún no has completado nada"
-            }
-            emptyDescription={
-              filter === "pendientes"
-                ? "Tómate un respiro, te lo has ganado."
-                : "Marca una tarea para verla aquí."
-            }
+            tasks={todaysTasks}
+            emptyTitle="Sin tareas para hoy"
+            emptyDescription="Añade una o disfruta del día."
           />
 
           <button

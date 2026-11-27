@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { DayOverview } from "@/components/dashboard/day-overview";
+import { CalendarPanel } from "@/components/dashboard/calendar-panel";
 import { GreetingHeader } from "@/components/dashboard/greeting-header";
 import { NextUpCard } from "@/components/dashboard/next-up-card";
-import { QuickNotes } from "@/components/dashboard/quick-notes";
+import { OverdueTasks } from "@/components/dashboard/overdue-tasks";
+import { TodayHabits } from "@/components/dashboard/today-habits";
 import { TodayTasks } from "@/components/dashboard/today-tasks";
-import { UpcomingActivities } from "@/components/dashboard/upcoming-activities";
 import { InstallCard } from "@/components/pwa/install-card";
 import { NotificationsCard } from "@/components/pwa/notifications-card";
 
@@ -32,27 +32,23 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-4 sm:space-y-6">
       <GreetingHeader />
 
       <InstallCard />
 
       <NotificationsCard />
 
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <DayOverview />
-        </div>
-        <NextUpCard />
-      </div>
+      <CalendarPanel />
 
       <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <TodayTasks />
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-1">
-          <UpcomingActivities limit={4} />
-          <QuickNotes />
+        <div className="grid grid-cols-1 gap-4 sm:gap-6">
+          <NextUpCard />
+          <TodayHabits />
+          <OverdueTasks />
         </div>
       </div>
     </div>
