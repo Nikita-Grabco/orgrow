@@ -190,3 +190,42 @@ export type SpecialDatePatch = Partial<Pick<SpecialDate, "title" | "kind" | "mon
   year?: number | null | undefined;
   remindBeforeDays?: number | null | undefined;
 };
+
+/* -------------------------------------------------------------------------- */
+/* Goals (long-term objectives with milestones)                               */
+/* -------------------------------------------------------------------------- */
+
+/** What completes a milestone on its own. */
+export type MilestoneLink =
+  | { type: "task"; taskId: string }
+  /** Done once the habit was completed on `days` days since the goal started. */
+  | { type: "habit"; habitId: string; days: number };
+
+export interface Milestone {
+  id: string;
+  title: string;
+  /** Manual state. Ignored while the milestone has a valid `link`. */
+  done: boolean;
+  link?: MilestoneLink | undefined;
+}
+
+export interface Goal {
+  id: string;
+  title: string;
+  category: CategoryId;
+  /** Local calendar date "YYYY-MM-DD", or `null` for no deadline. */
+  dueDate: string | null;
+  /** Local calendar date the goal started; habit milestones count days from here. */
+  startDate: string;
+  /** Epoch millis when it was marked as achieved; `null` while active. */
+  achievedAt: number | null;
+  milestones: Milestone[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type NewGoalInput = Pick<Goal, "title" | "category" | "dueDate" | "milestones">;
+
+export type GoalPatch = Partial<
+  Pick<Goal, "title" | "category" | "dueDate" | "milestones" | "achievedAt">
+>;

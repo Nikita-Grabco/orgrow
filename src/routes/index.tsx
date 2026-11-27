@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { CalendarPanel } from "@/components/dashboard/calendar-panel";
+import { GoalsCard } from "@/components/dashboard/goals-card";
 import { GreetingHeader } from "@/components/dashboard/greeting-header";
 import { NextUpCard } from "@/components/dashboard/next-up-card";
 import { OverdueTasks } from "@/components/dashboard/overdue-tasks";
@@ -50,6 +51,7 @@ function Dashboard() {
           <NextUpCard />
           <SpecialDatesCard variant="dashboard" />
           <TodayHabits />
+          <GoalsCard />
           <OverdueTasks />
         </div>
       </div>

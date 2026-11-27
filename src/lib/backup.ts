@@ -1,6 +1,7 @@
 import { CATEGORY_IDS, NOTE_KIND_IDS, PRIORITY_IDS } from "@/config/categories";
 import { SPECIAL_DATE_KIND_IDS } from "@/config/special-dates";
 import { isValidISODate } from "@/lib/dates";
+import { normalizeMilestones } from "@/lib/goals";
 import { maxDayOfMonth } from "@/lib/special-dates";
 import { habitLogId } from "@/services/habits-repository";
 import { deterministicUuid } from "@/services/local-import";
@@ -11,6 +12,7 @@ import type {
   Habit,
   HabitFrequency,
   HabitKind,
+  Goal,
   HabitLog,
   Note,
   NoteKind,
@@ -216,6 +218,29 @@ function readSpecialDate(raw: unknown, now: number): SpecialDate | null {
   };
 }
 
+function readGoal(raw: unknown, now: number): Goal | null {
+  if (!isObject(raw)) return null;
+  const id = text(raw["id"], 1, 100);
+  const title = text(raw["title"], 1, 120);
+  const category = oneOf<CategoryId>(raw["category"], CATEGORY_IDS);
+  if (!id || !title || !category) return null;
+
+  const createdAt = millis(raw["createdAt"], now);
+  return {
+    id,
+    title,
+    category,
+    dueDate: isValidISODate(raw["dueDate"]) ? raw["dueDate"] : null,
+    startDate: isValidISODate(raw["startDate"])
+      ? raw["startDate"]
+      : new Date(createdAt).toISOString().slice(0, 10),
+    achievedAt: raw["achievedAt"] === null ? null : millis(raw["achievedAt"], 0) || null,
+    milestones: normalizeMilestones(raw["milestones"]),
+    createdAt,
+    updatedAt: millis(raw["updatedAt"], createdAt),
+  };
+}
+
 function readFrequency(raw: unknown): HabitFrequency | null {
   if (!isObject(raw)) return null;
   if (raw["type"] === "daily") return { type: "daily" };
@@ -340,6 +365,7 @@ export function parseBackup(source: string, now: number = Date.now()): BackupRes
   const habits = readList(data["habits"], (item) => readHabit(item, now));
   const logs = readList(data["habitLogs"], readLog);
   const specialDates = readList(data["specialDates"], (item) => readSpecialDate(item, now));
+  const goals = readList(data["goals"], (item) => readGoal(item, now));
 
   // Un registro de hábito sin su hábito (o repetido el mismo día) no sirve.
   const habitIds = new Set(habits.items.map((habit) => habit.id));
@@ -370,6 +396,7 @@ export function parseBackup(source: string, now: number = Date.now()): BackupRes
         habits: habits.items,
         habitLogs,
         specialDates: specialDates.items,
+        goals: goals.items,
       },
       skipped:
         tasks.skipped +
@@ -378,6 +405,7 @@ export function parseBackup(source: string, now: number = Date.now()): BackupRes
         habits.skipped +
         logs.skipped +
         specialDates.skipped +
+        goals.skipped +
         orphanLogs,
     },
   };
@@ -406,6 +434,7 @@ export function assignBackupIds(parsed: ParsedBackup, userId: string): ImportPay
       ...activity,
       id: idFor("activity", activity.id),
     })),
+    goals: (parsed.payload.goals ?? []).map((goal) => ({ ...goal, id: idFor("goal", goal.id) })),
     specialDates: (parsed.payload.specialDates ?? []).map((date) => ({
       ...date,
       id: idFor("special-date", date.id),

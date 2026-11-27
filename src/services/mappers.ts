@@ -13,6 +13,7 @@
  *  - `user_id`, `created_at` y `updated_at` los rellena el servidor al escribir.
  */
 
+import { normalizeMilestones } from "@/lib/goals";
 import { habitLogId } from "@/services/habits-repository";
 import type {
   Activity,
@@ -26,6 +27,9 @@ import type {
   NewActivityInput,
   NewHabitInput,
   NewNoteInput,
+  Goal,
+  GoalPatch,
+  NewGoalInput,
   NewSpecialDateInput,
   NewTaskInput,
   Note,
@@ -106,6 +110,18 @@ export interface HabitLogRow {
   habit_id: string;
   log_date: string;
   value: number | string;
+}
+
+export interface GoalRow {
+  id: string;
+  title: string;
+  category: CategoryId;
+  due_date: string | null;
+  start_date: string;
+  achieved_at: string | null;
+  milestones: unknown;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SpecialDateRow {
@@ -415,5 +431,49 @@ export function specialDateToUpdate(patch: SpecialDatePatch) {
     // `null` limpia el valor opcional; `undefined` no lo toca.
     year: patch.year,
     remind_before_days: patch.remindBeforeDays,
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Objetivos                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export function goalFromRow(row: GoalRow): Goal {
+  return {
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    dueDate: row.due_date,
+    startDate: row.start_date,
+    achievedAt: row.achieved_at ? millisFromDb(row.achieved_at) : null,
+    milestones: normalizeMilestones(row.milestones),
+    createdAt: millisFromDb(row.created_at),
+    updatedAt: millisFromDb(row.updated_at),
+  };
+}
+
+export function goalToInsert(input: NewGoalInput & { startDate?: string }, id?: string) {
+  return defined({
+    id,
+    title: input.title,
+    category: input.category,
+    due_date: input.dueDate,
+    start_date: input.startDate,
+    milestones: input.milestones,
+  });
+}
+
+export function goalToUpdate(patch: GoalPatch) {
+  return defined({
+    title: patch.title,
+    category: patch.category,
+    due_date: patch.dueDate,
+    achieved_at:
+      patch.achievedAt === undefined
+        ? undefined
+        : patch.achievedAt === null
+          ? null
+          : millisToDb(patch.achievedAt),
+    milestones: patch.milestones,
   });
 }

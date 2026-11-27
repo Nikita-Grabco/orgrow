@@ -51,6 +51,12 @@ function repositoriesWith(initial: Note[]) {
       update: async (d) => d,
       remove: async () => {},
     },
+    goals: {
+      list: async () => [],
+      create: async (g) => g,
+      update: async (g) => g,
+      remove: async () => {},
+    },
   };
   return { repositories, saved };
 }

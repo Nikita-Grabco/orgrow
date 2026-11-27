@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { ActivityDialog } from "@/components/activities/activity-dialog";
+import { GoalDialog } from "@/components/goals/goal-dialog";
 import { SpecialDateDialog } from "@/components/special-dates/special-date-dialog";
 import { HabitDialog } from "@/components/habits/habit-dialog";
 import { TaskDialog } from "@/components/tasks/task-dialog";
@@ -42,6 +43,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <TaskDialog />
       <ActivityDialog />
       <SpecialDateDialog />
+      <GoalDialog />
       <HabitDialog />
     </div>
   );

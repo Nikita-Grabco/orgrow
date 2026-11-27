@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 import { toISODate } from "@/lib/dates";
 import { roundValue } from "@/lib/habits";
+import { applyGoalPatch } from "@/lib/goals";
 import { applySpecialDatePatch } from "@/lib/special-dates";
 import { applyActivityPatch, applyNotePatch, applyTaskPatch, createId } from "@/lib/planner";
 import { habitLogId } from "@/services/habits-repository";
@@ -22,10 +23,13 @@ import {
 import type {
   Activity,
   ActivityPatch,
+  Goal,
+  GoalPatch,
   Habit,
   HabitLog,
   HabitPatch,
   NewActivityInput,
+  NewGoalInput,
   NewHabitInput,
   NewNoteInput,
   NewSpecialDateInput,
@@ -57,6 +61,12 @@ interface ActivityDialogState {
   date: string | null;
 }
 
+interface GoalDialogState {
+  open: boolean;
+  mode: "create" | "edit";
+  goalId: string | null;
+}
+
 interface SpecialDateDialogState {
   open: boolean;
   mode: "create" | "edit";
@@ -75,6 +85,7 @@ interface PlannerContextValue {
   habitLogs: HabitLog[];
   activities: Activity[];
   specialDates: SpecialDate[];
+  goals: Goal[];
   notes: Note[];
   /** False until saved data has been hydrated from the browser. */
   isReady: boolean;
@@ -93,6 +104,10 @@ interface PlannerContextValue {
   addSpecialDate: (input: NewSpecialDateInput) => void;
   editSpecialDate: (id: string, patch: SpecialDatePatch) => void;
   deleteSpecialDate: (id: string) => void;
+
+  addGoal: (input: NewGoalInput) => void;
+  editGoal: (id: string, patch: GoalPatch) => void;
+  deleteGoal: (id: string) => void;
 
   addHabit: (input: NewHabitInput) => void;
   editHabit: (id: string, patch: HabitPatch) => void;
@@ -118,6 +133,11 @@ interface PlannerContextValue {
   openAddActivity: (date?: string | null) => void;
   openEditActivity: (id: string) => void;
   setActivityDialogOpen: (open: boolean) => void;
+
+  goalDialog: GoalDialogState;
+  openAddGoal: () => void;
+  openEditGoal: (id: string) => void;
+  setGoalDialogOpen: (open: boolean) => void;
 
   specialDateDialog: SpecialDateDialogState;
   openAddSpecialDate: () => void;
@@ -145,6 +165,8 @@ const CLOSED_ACTIVITY_DIALOG: ActivityDialogState = {
   activityId: null,
   date: null,
 };
+
+const CLOSED_GOAL_DIALOG: GoalDialogState = { open: false, mode: "create", goalId: null };
 
 const CLOSED_SPECIAL_DATE_DIALOG: SpecialDateDialogState = {
   open: false,
@@ -181,6 +203,7 @@ export function PlannerProvider({
     habits: habitsRepo,
     habitLogs: habitLogsRepo,
     specialDates: specialDatesRepo,
+    goals: goalsRepo,
   } = repos;
 
   // La función cambia en cada render del padre; la última es la que vale al cargar.
@@ -195,9 +218,11 @@ export function PlannerProvider({
   const [habits, setHabits] = useState<Habit[]>([]);
   const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
   const [specialDates, setSpecialDates] = useState<SpecialDate[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [taskDialog, setTaskDialog] = useState<TaskDialogState>(CLOSED_TASK_DIALOG);
   const [activityDialog, setActivityDialog] = useState<ActivityDialogState>(CLOSED_ACTIVITY_DIALOG);
+  const [goalDialog, setGoalDialog] = useState<GoalDialogState>(CLOSED_GOAL_DIALOG);
   const [specialDateDialog, setSpecialDateDialog] = useState<SpecialDateDialogState>(
     CLOSED_SPECIAL_DATE_DIALOG,
   );
@@ -217,18 +242,25 @@ export function PlannerProvider({
           console.error("[orgrow] No se pudieron cargar las fechas importantes", error);
           return [] as SpecialDate[];
         }),
+        // Igual que las fechas: sin la tabla (docs/supabase-goals.sql) el resto carga.
+        goalsRepo.list().catch((error: unknown) => {
+          console.error("[orgrow] No se pudieron cargar los objetivos", error);
+          return [] as Goal[];
+        }),
       ]),
-    [tasksRepo, notesRepo, activitiesRepo, habitsRepo, habitLogsRepo, specialDatesRepo],
+    [tasksRepo, notesRepo, activitiesRepo, habitsRepo, habitLogsRepo, specialDatesRepo, goalsRepo],
   );
 
   const reload = useCallback(async () => {
-    const [nextTasks, nextNotes, nextActivities, nextHabits, nextLogs, nextDates] = await loadAll();
+    const [nextTasks, nextNotes, nextActivities, nextHabits, nextLogs, nextDates, nextGoals] =
+      await loadAll();
     setTasks(nextTasks);
     setNotes(nextNotes);
     setActivities(nextActivities);
     setHabits(nextHabits);
     setHabitLogs(nextLogs);
     setSpecialDates(nextDates);
+    setGoals(nextGoals);
   }, [loadAll]);
 
   useEffect(() => {
@@ -245,15 +277,18 @@ export function PlannerProvider({
 
     prepare()
       .then(loadAll)
-      .then(([nextTasks, nextNotes, nextActivities, nextHabits, nextLogs, nextDates]) => {
-        if (!active) return;
-        setTasks(nextTasks);
-        setNotes(nextNotes);
-        setActivities(nextActivities);
-        setHabits(nextHabits);
-        setHabitLogs(nextLogs);
-        setSpecialDates(nextDates);
-      })
+      .then(
+        ([nextTasks, nextNotes, nextActivities, nextHabits, nextLogs, nextDates, nextGoals]) => {
+          if (!active) return;
+          setTasks(nextTasks);
+          setNotes(nextNotes);
+          setActivities(nextActivities);
+          setHabits(nextHabits);
+          setHabitLogs(nextLogs);
+          setSpecialDates(nextDates);
+          setGoals(nextGoals);
+        },
+      )
       .catch((error: unknown) => {
         console.error("[orgrow] No se pudieron cargar los datos", error);
         toast.error("No se pudieron cargar tus datos guardados");
@@ -441,6 +476,48 @@ export function PlannerProvider({
     [specialDatesRepo, reportPersistError],
   );
 
+  const addGoal = useCallback(
+    (input: NewGoalInput) => {
+      const now = Date.now();
+      const goal: Goal = {
+        ...input,
+        id: createId("g"),
+        startDate: toISODate(new Date(now)),
+        achievedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      setGoals((prev) => [...prev, goal]);
+      void goalsRepo
+        .create(goal)
+        .catch((error: unknown) => reportPersistError("No se pudo guardar el objetivo", error));
+    },
+    [goalsRepo, reportPersistError],
+  );
+
+  const editGoal = useCallback(
+    (id: string, patch: GoalPatch) => {
+      const current = goals.find((item) => item.id === id);
+      if (!current) return;
+      const updated = applyGoalPatch(current, patch);
+      setGoals((prev) => prev.map((item) => (item.id === id ? updated : item)));
+      void goalsRepo
+        .update(updated)
+        .catch((error: unknown) => reportPersistError("No se pudo guardar el objetivo", error));
+    },
+    [goals, goalsRepo, reportPersistError],
+  );
+
+  const deleteGoal = useCallback(
+    (id: string) => {
+      setGoals((prev) => prev.filter((item) => item.id !== id));
+      void goalsRepo
+        .remove(id)
+        .catch((error: unknown) => reportPersistError("No se pudo eliminar el objetivo", error));
+    },
+    [goalsRepo, reportPersistError],
+  );
+
   const addHabit = useCallback(
     (input: NewHabitInput) => {
       const now = Date.now();
@@ -609,6 +686,18 @@ export function PlannerProvider({
     setActivityDialog((prev) => ({ ...prev, open }));
   }, []);
 
+  const openAddGoal = useCallback(() => {
+    setGoalDialog({ open: true, mode: "create", goalId: null });
+  }, []);
+
+  const openEditGoal = useCallback((id: string) => {
+    setGoalDialog({ open: true, mode: "edit", goalId: id });
+  }, []);
+
+  const setGoalDialogOpen = useCallback((open: boolean) => {
+    setGoalDialog((prev) => ({ ...prev, open }));
+  }, []);
+
   const openAddSpecialDate = useCallback(() => {
     setSpecialDateDialog({ open: true, mode: "create", specialDateId: null });
   }, []);
@@ -638,6 +727,7 @@ export function PlannerProvider({
       tasks,
       activities,
       specialDates,
+      goals,
       notes,
       habits,
       habitLogs,
@@ -653,6 +743,9 @@ export function PlannerProvider({
       addSpecialDate,
       editSpecialDate,
       deleteSpecialDate,
+      addGoal,
+      editGoal,
+      deleteGoal,
       addHabit,
       editHabit,
       deleteHabit,
@@ -670,6 +763,10 @@ export function PlannerProvider({
       openAddActivity,
       openEditActivity,
       setActivityDialogOpen,
+      goalDialog,
+      openAddGoal,
+      openEditGoal,
+      setGoalDialogOpen,
       specialDateDialog,
       openAddSpecialDate,
       openEditSpecialDate,
@@ -683,6 +780,7 @@ export function PlannerProvider({
       tasks,
       activities,
       specialDates,
+      goals,
       notes,
       habits,
       habitLogs,
@@ -698,6 +796,9 @@ export function PlannerProvider({
       addSpecialDate,
       editSpecialDate,
       deleteSpecialDate,
+      addGoal,
+      editGoal,
+      deleteGoal,
       addHabit,
       editHabit,
       deleteHabit,
@@ -715,6 +816,10 @@ export function PlannerProvider({
       openAddActivity,
       openEditActivity,
       setActivityDialogOpen,
+      goalDialog,
+      openAddGoal,
+      openEditGoal,
+      setGoalDialogOpen,
       specialDateDialog,
       openAddSpecialDate,
       openEditSpecialDate,

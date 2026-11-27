@@ -15,6 +15,7 @@ import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as AjustesRouteImport } from './routes/ajustes'
 import { Route as HabitosRouteImport } from './routes/habitos'
 import { Route as NotasRouteImport } from './routes/notas'
+import { Route as ProductividadRouteImport } from './routes/productividad'
 import { Route as TareasRouteImport } from './routes/tareas'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const NotasRoute = NotasRouteImport.update({
   path: '/notas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductividadRoute = ProductividadRouteImport.update({
+  id: '/productividad',
+  path: '/productividad',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TareasRoute = TareasRouteImport.update({
   id: '/tareas',
   path: '/tareas',
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/ajustes': typeof AjustesRoute
   '/habitos': typeof HabitosRoute
   '/notas': typeof NotasRoute
+  '/productividad': typeof ProductividadRoute
   '/tareas': typeof TareasRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/ajustes': typeof AjustesRoute
   '/habitos': typeof HabitosRoute
   '/notas': typeof NotasRoute
+  '/productividad': typeof ProductividadRoute
   '/tareas': typeof TareasRoute
 }
 export interface FileRoutesById {
@@ -79,15 +87,30 @@ export interface FileRoutesById {
   '/ajustes': typeof AjustesRoute
   '/habitos': typeof HabitosRoute
   '/notas': typeof NotasRoute
+  '/productividad': typeof ProductividadRoute
   '/tareas': typeof TareasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/acceso' | '/agenda' | '/ajustes' | '/habitos' | '/notas' | '/tareas'
+    | '/'
+    | '/acceso'
+    | '/agenda'
+    | '/ajustes'
+    | '/habitos'
+    | '/notas'
+    | '/productividad'
+    | '/tareas'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/acceso' | '/agenda' | '/ajustes' | '/habitos' | '/notas' | '/tareas'
+    | '/'
+    | '/acceso'
+    | '/agenda'
+    | '/ajustes'
+    | '/habitos'
+    | '/notas'
+    | '/productividad'
+    | '/tareas'
   id:
     | '__root__'
     | '/'
@@ -96,6 +119,7 @@ export interface FileRouteTypes {
     | '/ajustes'
     | '/habitos'
     | '/notas'
+    | '/productividad'
     | '/tareas'
   fileRoutesById: FileRoutesById
 }
@@ -106,6 +130,7 @@ export interface RootRouteChildren {
   AjustesRoute: typeof AjustesRoute
   HabitosRoute: typeof HabitosRoute
   NotasRoute: typeof NotasRoute
+  ProductividadRoute: typeof ProductividadRoute
   TareasRoute: typeof TareasRoute
 }
 
@@ -153,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/productividad': {
+      id: '/productividad'
+      path: '/productividad'
+      fullPath: '/productividad'
+      preLoaderRoute: typeof ProductividadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tareas': {
       id: '/tareas'
       path: '/tareas'
@@ -170,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   AjustesRoute: AjustesRoute,
   HabitosRoute: HabitosRoute,
   NotasRoute: NotasRoute,
+  ProductividadRoute: ProductividadRoute,
   TareasRoute: TareasRoute,
 }
 export const routeTree = rootRouteImport

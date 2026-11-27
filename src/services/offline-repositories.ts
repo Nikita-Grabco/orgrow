@@ -1,11 +1,12 @@
 import type { ActivitiesRepository } from "@/services/activities-repository";
 import type { HabitLogsRepository, HabitsRepository } from "@/services/habits-repository";
+import type { GoalsRepository } from "@/services/goals-repository";
 import type { SpecialDatesRepository } from "@/services/special-dates-repository";
 import type { NotesRepository } from "@/services/notes-repository";
 import { syncStatus } from "@/services/sync-status";
 import type { PlannerRepositories } from "@/services/supabase-repositories";
 import type { TasksRepository } from "@/services/tasks-repository";
-import type { Activity, Habit, HabitLog, Note, SpecialDate, Task } from "@/types/planner";
+import type { Activity, Goal, Habit, HabitLog, Note, SpecialDate, Task } from "@/types/planner";
 
 /**
  * Uso sin conexión, por encima de los repositorios de Supabase.
@@ -21,7 +22,8 @@ import type { Activity, Habit, HabitLog, Note, SpecialDate, Task } from "@/types
  * Todo se guarda por usuario. Última escritura gana: no hay fusión de conflictos.
  */
 
-type RepoName = "tasks" | "notes" | "activities" | "habits" | "habitLogs" | "specialDates";
+type RepoName =
+  "tasks" | "notes" | "activities" | "habits" | "habitLogs" | "specialDates" | "goals";
 
 /** `undefined` = esa lista aún no se ha leído nunca del servidor. */
 interface Snapshot {
@@ -31,6 +33,7 @@ interface Snapshot {
   habits?: Habit[] | undefined;
   habitLogs?: HabitLog[] | undefined;
   specialDates?: SpecialDate[] | undefined;
+  goals?: Goal[] | undefined;
 }
 
 export interface OutboxEntry {
@@ -288,7 +291,7 @@ export function createOfflinePlanner(
     list?.map((existing) => (existing.id === item.id ? item : existing));
 
   function crud<T extends { id: string }>(
-    name: "tasks" | "notes" | "activities" | "habits" | "specialDates",
+    name: "tasks" | "notes" | "activities" | "habits" | "specialDates" | "goals",
     inner: {
       list(): Promise<T[]>;
       create(item: T): Promise<T>;
@@ -356,6 +359,7 @@ export function createOfflinePlanner(
   });
 
   const specialDates: SpecialDatesRepository = crud("specialDates", remote.specialDates);
+  const goals: GoalsRepository = crud("goals", remote.goals);
 
   const habitLogs: HabitLogsRepository = {
     list: () => read("habitLogs", () => remote.habitLogs.list()),
@@ -433,7 +437,7 @@ export function createOfflinePlanner(
   }
 
   return {
-    repositories: { tasks, notes, activities, habits, habitLogs, specialDates },
+    repositories: { tasks, notes, activities, habits, habitLogs, specialDates, goals },
     flush,
     start,
   };

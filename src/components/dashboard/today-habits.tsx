@@ -43,7 +43,8 @@ export function TodayHabits() {
           </span>
         ) : (
           <Link
-            to="/habitos"
+            to="/productividad"
+            search={{ vista: "habitos" }}
             className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
           >
             Hábitos <ArrowRight className="size-3" />

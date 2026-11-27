@@ -16,6 +16,9 @@ import {
   activityToInsert,
   activityToUpdate,
   habitFromRow,
+  goalFromRow,
+  goalToInsert,
+  goalToUpdate,
   habitLogFromRow,
   habitLogToUpsert,
   habitToInsert,
@@ -31,19 +34,21 @@ import {
   taskToInsert,
   taskToUpdate,
   type ActivityRow,
+  type GoalRow,
   type HabitLogRow,
   type HabitRow,
   type NoteRow,
   type SpecialDateRow,
   type TaskRow,
 } from "@/services/mappers";
+import { createLocalGoalsRepository, type GoalsRepository } from "@/services/goals-repository";
 import {
   createLocalSpecialDatesRepository,
   type SpecialDatesRepository,
 } from "@/services/special-dates-repository";
 import { createLocalNotesRepository, type NotesRepository } from "@/services/notes-repository";
 import { createLocalTasksRepository, type TasksRepository } from "@/services/tasks-repository";
-import type { Activity, Habit, HabitLog, Note, SpecialDate, Task } from "@/types/planner";
+import type { Activity, Goal, Habit, HabitLog, Note, SpecialDate, Task } from "@/types/planner";
 
 /** Los repositorios que necesita el store, sea cual sea el almacenamiento. */
 export interface PlannerRepositories {
@@ -53,6 +58,7 @@ export interface PlannerRepositories {
   habits: HabitsRepository;
   habitLogs: HabitLogsRepository;
   specialDates: SpecialDatesRepository;
+  goals: GoalsRepository;
 }
 
 export function createLocalPlannerRepositories(): PlannerRepositories {
@@ -63,6 +69,7 @@ export function createLocalPlannerRepositories(): PlannerRepositories {
     habits: createLocalHabitsRepository(),
     habitLogs: createLocalHabitLogsRepository(),
     specialDates: createLocalSpecialDatesRepository(),
+    goals: createLocalGoalsRepository(),
   };
 }
 
@@ -379,6 +386,49 @@ export function createSupabaseSpecialDatesRepository(
   };
 }
 
+export function createSupabaseGoalsRepository(client: SupabaseClient): GoalsRepository {
+  return {
+    async list() {
+      const rows = await fetchAll<GoalRow>(client, "goals", [
+        { column: "created_at", ascending: true },
+      ]);
+      return rows.map(goalFromRow);
+    },
+
+    async create(goal) {
+      const { data, error } = await client
+        .from("goals")
+        .insert(goalToInsert(goal, goal.id))
+        .select()
+        .single<GoalRow>();
+      if (error) fail(error);
+      return goalFromRow(data);
+    },
+
+    async update(goal) {
+      const { data, error } = await client
+        .from("goals")
+        .update(
+          goalToUpdate({
+            title: goal.title,
+            category: goal.category,
+            dueDate: goal.dueDate,
+            achievedAt: goal.achievedAt,
+            milestones: goal.milestones,
+          }),
+        )
+        .eq("id", goal.id)
+        .select()
+        .maybeSingle<GoalRow>();
+      if (error) fail(error);
+      if (!data) throw new Error(`No existe el objetivo "${goal.id}"`);
+      return goalFromRow(data);
+    },
+
+    remove: (id) => removeById(client, "goals", id),
+  };
+}
+
 export function createSupabasePlannerRepositories(client: SupabaseClient): PlannerRepositories {
   return {
     tasks: createSupabaseTasksRepository(client),
@@ -387,6 +437,7 @@ export function createSupabasePlannerRepositories(client: SupabaseClient): Plann
     habits: createSupabaseHabitsRepository(client),
     habitLogs: createSupabaseHabitLogsRepository(client),
     specialDates: createSupabaseSpecialDatesRepository(client),
+    goals: createSupabaseGoalsRepository(client),
   };
 }
 
@@ -402,6 +453,7 @@ export interface ImportPayload {
   habitLogs: HabitLog[];
   /** Opcional: las copias antiguas no las traen. */
   specialDates?: SpecialDate[];
+  goals?: Goal[];
 }
 
 /**
@@ -455,6 +507,16 @@ export async function importPlannerData(
       ...habitToInsert(habit, habit.id),
       archived: habit.archived,
       created_at: millisToDb(habit.createdAt),
+    })),
+    "id",
+  );
+
+  await upsert(
+    "goals",
+    (data.goals ?? []).map((goal) => ({
+      ...goalToInsert(goal, goal.id),
+      achieved_at: goal.achievedAt ? millisToDb(goal.achievedAt) : null,
+      created_at: millisToDb(goal.createdAt),
     })),
     "id",
   );

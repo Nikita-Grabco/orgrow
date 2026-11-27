@@ -15,6 +15,7 @@ export const STORAGE_KEYS = {
   habits: "orgrow:v1:habits",
   habitLogs: "orgrow:v1:habit-logs",
   specialDates: "orgrow:v1:special-dates",
+  goals: "orgrow:v1:goals",
 } as const;
 
 export interface StoredCollection<T> {
