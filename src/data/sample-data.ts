@@ -274,9 +274,10 @@ export function createSampleHabits(now: number): Habit[] {
     {
       id: "h-leer",
       name: "Leer",
-      kind: "time",
+      kind: "count",
       target: 60,
       step: 15,
+      unit: "min",
       frequency: { type: "daily" },
       category: "personal",
       archived: false,

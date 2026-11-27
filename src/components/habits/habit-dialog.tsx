@@ -22,9 +22,21 @@ type FrequencyMode = "daily" | "weekdays" | "weekly";
 
 const KIND_OPTIONS: { id: HabitKind; label: string; hint: string }[] = [
   { id: "check", label: "Sí / no", hint: "Lo haces o no lo haces (ir al gimnasio)." },
-  { id: "count", label: "Cantidad", hint: "Sumas hasta una meta (1 L de agua)." },
-  { id: "time", label: "Tiempo", hint: "Sumas minutos hasta una meta (leer 1 h)." },
+  {
+    id: "count",
+    label: "Cantidad",
+    hint: "Sumas hasta una meta, con la unidad que quieras (1 L de agua, 10 páginas, 1 h de lectura).",
+  },
 ];
+
+/** Unidades sugeridas para un hábito de cantidad; se puede escribir cualquier otra. */
+const UNIT_SUGGESTIONS = ["min", "h", "páginas", "vasos", "L", "m"] as const;
+
+/** Los hábitos "de tiempo" antiguos se editan como cantidad en minutos (sus datos ya son minutos). */
+function editableKind(habit: Habit | undefined): HabitKind {
+  if (!habit) return "check";
+  return habit.kind === "time" ? "count" : habit.kind;
+}
 
 const FREQUENCY_OPTIONS: { id: FrequencyMode; label: string }[] = [
   { id: "daily", label: "Cada día" },
@@ -55,10 +67,10 @@ interface HabitFormProps {
 
 function HabitForm({ mode, habit, onSubmit, onDelete }: HabitFormProps) {
   const [name, setName] = useState(habit?.name ?? "");
-  const [kind, setKind] = useState<HabitKind>(habit?.kind ?? "check");
-  const [target, setTarget] = useState(String(habit?.target ?? (habit?.kind === "time" ? 60 : 1)));
+  const [kind, setKind] = useState<HabitKind>(editableKind(habit));
+  const [target, setTarget] = useState(String(habit?.target ?? 1));
   const [step, setStep] = useState(String(habit?.step ?? 1));
-  const [unit, setUnit] = useState(habit?.unit ?? "");
+  const [unit, setUnit] = useState(habit?.unit ?? (habit?.kind === "time" ? "min" : ""));
   const [frequencyMode, setFrequencyMode] = useState<FrequencyMode>(
     habit?.frequency.type ?? "daily",
   );
@@ -75,10 +87,7 @@ function HabitForm({ mode, habit, onSubmit, onDelete }: HabitFormProps) {
     if (next === kind) return;
     setKind(next);
     // Sensible defaults when switching, unless the user is editing an existing habit.
-    if (next === "time") {
-      setTarget("60");
-      setStep("15");
-    } else if (next === "count") {
+    if (next === "count") {
       setTarget("1");
       setStep("0.25");
       setUnit((current) => current || "L");
@@ -152,7 +161,7 @@ function HabitForm({ mode, habit, onSubmit, onDelete }: HabitFormProps) {
 
       {kind !== "check" && (
         <div className="flex flex-wrap gap-4">
-          <Field label={kind === "time" ? "Meta diaria (min)" : "Meta diaria"}>
+          <Field label="Meta diaria">
             <Input
               inputMode="decimal"
               value={target}
@@ -161,18 +170,16 @@ function HabitForm({ mode, habit, onSubmit, onDelete }: HabitFormProps) {
               className="h-10 w-28 rounded-xl"
             />
           </Field>
-          {kind === "count" && (
-            <Field label="Unidad">
-              <Input
-                value={unit}
-                onChange={(event) => setUnit(event.target.value)}
-                placeholder="L, vasos…"
-                aria-label="Unidad"
-                className="h-10 w-28 rounded-xl"
-              />
-            </Field>
-          )}
-          <Field label={kind === "time" ? "Suma por toque (min)" : "Suma por toque"}>
+          <Field label="Unidad">
+            <Input
+              value={unit}
+              onChange={(event) => setUnit(event.target.value)}
+              placeholder="L, min, páginas…"
+              aria-label="Unidad"
+              className="h-10 w-28 rounded-xl"
+            />
+          </Field>
+          <Field label="Suma por toque">
             <Input
               inputMode="decimal"
               value={step}
@@ -181,6 +188,20 @@ function HabitForm({ mode, habit, onSubmit, onDelete }: HabitFormProps) {
               className="h-10 w-28 rounded-xl"
             />
           </Field>
+        </div>
+      )}
+
+      {kind === "count" && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Unidades sugeridas">
+          {UNIT_SUGGESTIONS.map((suggestion) => (
+            <Chip
+              key={suggestion}
+              selected={unit.trim() === suggestion}
+              onClick={() => setUnit(suggestion)}
+            >
+              {suggestion}
+            </Chip>
+          ))}
         </div>
       )}
 
