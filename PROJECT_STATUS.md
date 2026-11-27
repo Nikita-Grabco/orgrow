@@ -198,7 +198,7 @@ Reglas de arquitectura:
 ### PWA y modo sin conexión (Parte 7)
 
 - **Instalable:** `public/manifest.webmanifest`, iconos en `public/icons/` (generados con
-  `node scripts/generate-icons.mjs`, mismo diseño que `Brand`) y metas de iOS en `__root.tsx`.
+  logo elegido por el usuario (2026-11-27; el script generador se eliminó)) y metas de iOS en `__root.tsx`.
   `InstallCard` (dashboard) ofrece el botón nativo en Chrome/Android/PC y explica
   *Compartir → Añadir a pantalla de inicio* en Safari de iPhone/iPad; se puede descartar.
 - **Service worker** (`public/sw.js`, registrado solo en producción): guarda la aplicación
