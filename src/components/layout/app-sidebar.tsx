@@ -2,16 +2,15 @@ import { Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { AddMenu } from "@/components/layout/add-menu";
 import { Button } from "@/components/ui/button";
 import { NAV_ITEMS } from "@/config/navigation";
 import { useAuth } from "@/store/auth-store";
-import { usePlanner } from "@/store/planner-store";
 import { Brand } from "./brand";
 import { UserAvatar } from "./user-avatar";
 
 /** Icon rail on tablet (md), full sidebar on desktop (lg+). Hidden on mobile. */
 export function AppSidebar() {
-  const { openAddTask } = usePlanner();
   const { displayName } = useAuth();
 
   return (
@@ -37,14 +36,12 @@ export function AppSidebar() {
       </nav>
 
       <div className="mt-6">
-        <Button
-          onClick={() => openAddTask()}
-          className="w-full px-0 lg:px-4"
-          aria-label="Nueva tarea"
-        >
-          <Plus />
-          <span className="hidden lg:inline">Nueva tarea</span>
-        </Button>
+        <AddMenu>
+          <Button className="w-full px-0 lg:px-4" aria-label="Añadir">
+            <Plus />
+            <span className="hidden lg:inline">Añadir</span>
+          </Button>
+        </AddMenu>
       </div>
 
       <div className="mt-auto flex items-center justify-center gap-3 rounded-2xl lg:justify-start lg:border lg:border-sidebar-border lg:bg-card lg:p-3">

@@ -1,9 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 
+import { AddMenu } from "@/components/layout/add-menu";
 import { Button } from "@/components/ui/button";
 import { NAV_ITEMS, type NavItem } from "@/config/navigation";
-import { usePlanner } from "@/store/planner-store";
 
 function MobileNavLink({ item }: { item: NavItem }) {
   return (
@@ -20,33 +20,27 @@ function MobileNavLink({ item }: { item: NavItem }) {
   );
 }
 
-/** Bottom bar for phones with a central add button. */
+/** Barra inferior del móvil: las cinco secciones a partes iguales y el botón + flotando encima. */
 export function MobileNav() {
-  const { openAddTask } = usePlanner();
-
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 pb-safe backdrop-blur-xl md:hidden"
-      aria-label="Principal"
-    >
-      <div className="mx-auto grid h-[68px] max-w-md grid-cols-6 items-center px-2">
-        {NAV_ITEMS.slice(0, 2).map((item) => (
-          <MobileNavLink key={item.to} item={item} />
-        ))}
-        <div className="flex justify-center">
-          <Button
-            variant="fab"
-            onClick={() => openAddTask()}
-            className="-mt-7 size-14 [&_svg]:size-6"
-            aria-label="Nueva tarea"
-          >
+    <>
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 pb-safe backdrop-blur-xl md:hidden"
+        aria-label="Principal"
+      >
+        <div className="mx-auto grid h-[68px] max-w-md grid-cols-5 items-center px-2">
+          {NAV_ITEMS.map((item) => (
+            <MobileNavLink key={item.to} item={item} />
+          ))}
+        </div>
+      </nav>
+      <div className="fixed bottom-[calc(68px+env(safe-area-inset-bottom)+16px)] right-5 z-40 md:hidden">
+        <AddMenu>
+          <Button variant="fab" className="size-14 [&_svg]:size-6" aria-label="Añadir">
             <Plus />
           </Button>
-        </div>
-        {NAV_ITEMS.slice(2).map((item) => (
-          <MobileNavLink key={item.to} item={item} />
-        ))}
+        </AddMenu>
       </div>
-    </nav>
+    </>
   );
 }
