@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { PageHeader } from "@/components/common/page-header";
+import { AppearanceSection } from "@/components/settings/appearance-section";
 import { DangerSection } from "@/components/settings/danger-section";
 import { DataSection } from "@/components/settings/data-section";
 import { NotificationsSection } from "@/components/settings/notifications-section";
@@ -28,6 +29,7 @@ function SettingsPage() {
       <PageHeader eyebrow="Cuenta" title="Ajustes" description="Perfil, avisos y tus datos." />
       {/* El formulario toma sus valores iniciales del perfil: se vuelve a montar cuando este carga. */}
       <ProfileSection key={`${profileName}:${timezone ?? ""}`} />
+      <AppearanceSection />
       <NotificationsSection />
       <DataSection />
       <DangerSection />
