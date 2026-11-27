@@ -15,7 +15,7 @@
  * Avisos push (recordatorios): al llegar uno se muestra la notificación y, al
  * pulsarla, se abre o enfoca la app en la ruta indicada.
  */
-const VERSION = "orgrow-v2";
+const VERSION = "orgrow-v3";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const FONT_CACHE = `${VERSION}-fonts`;

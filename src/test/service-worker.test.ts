@@ -97,7 +97,7 @@ describe("service worker", () => {
     const { install, stores, self } = setup(network);
     await install();
 
-    expect([...stores.get("orgrow-v2-shell")!.keys()].sort()).toEqual(["/", "/offline.html"]);
+    expect([...stores.get("orgrow-v3-shell")!.keys()].sort()).toEqual(["/", "/offline.html"]);
     expect(self.skipWaiting).toHaveBeenCalled();
   });
 
@@ -122,7 +122,7 @@ describe("service worker", () => {
       `red:${ORIGIN}/tareas?x=1`,
     );
     // Se guarda por ruta, sin parámetros.
-    expect([...stores.get("orgrow-v2-shell")!.keys()]).toEqual([`${ORIGIN}/tareas`]);
+    expect([...stores.get("orgrow-v3-shell")!.keys()]).toEqual([`${ORIGIN}/tareas`]);
 
     online = false;
     expect(await (await request(`${ORIGIN}/tareas?x=2`, { mode: "navigate" }))!.text()).toBe(
@@ -149,7 +149,7 @@ describe("service worker", () => {
 
     const response = await (await request(`${ORIGIN}/boom`, { mode: "navigate" }))!;
     expect(response.status).toBe(500);
-    expect(stores.get("orgrow-v2-shell")?.size ?? 0).toBe(0);
+    expect(stores.get("orgrow-v3-shell")?.size ?? 0).toBe(0);
   });
 
   it("/assets: caché primero, la segunda vez no toca la red", async () => {
@@ -167,18 +167,18 @@ describe("service worker", () => {
   it("las fuentes de Google se guardan aparte", async () => {
     const { request, stores } = setup(network);
     await request("https://fonts.gstatic.com/s/source.woff2");
-    await vi.waitFor(() => expect(stores.get("orgrow-v2-fonts")?.size).toBe(1));
+    await vi.waitFor(() => expect(stores.get("orgrow-v3-fonts")?.size).toBe(1));
   });
 
   it("al activarse borra las cachés de versiones antiguas", async () => {
     const { handlers, stores } = setup(network);
-    stores.set("orgrow-v1-shell", new Map());
-    stores.set("orgrow-v2-assets", new Map());
+    stores.set("orgrow-v2-shell", new Map());
+    stores.set("orgrow-v3-assets", new Map());
 
     let waiting: Promise<unknown> | undefined;
     handlers["activate"]!({ waitUntil: (promise: Promise<unknown>) => (waiting = promise) });
     await waiting;
 
-    expect([...stores.keys()]).toEqual(["orgrow-v2-assets"]);
+    expect([...stores.keys()]).toEqual(["orgrow-v3-assets"]);
   });
 });
