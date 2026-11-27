@@ -153,3 +153,40 @@ export type HabitPatch = Partial<
   /** `null` clears the unit; `undefined` leaves it untouched. */
   unit?: string | null | undefined;
 };
+
+/* -------------------------------------------------------------------------- */
+/* Special dates (birthdays, anniversaries…)                                  */
+/* -------------------------------------------------------------------------- */
+
+export type SpecialDateKind = "cumpleanos" | "aniversario" | "otra";
+
+/** A date that repeats every year. */
+export interface SpecialDate {
+  id: string;
+  title: string;
+  kind: SpecialDateKind;
+  /** 1–12. */
+  month: number;
+  /** 1–31, valid for the month (29 allowed in February). */
+  day: number;
+  /** Optional year of origin, to show an age or the years completed. */
+  year?: number | undefined;
+  /**
+   * Days before to send a push reminder (0 = the same day). `null` = no reminder;
+   * `undefined` = the backend has no such column yet.
+   */
+  remindBeforeDays?: number | null | undefined;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type NewSpecialDateInput = Pick<
+  SpecialDate,
+  "title" | "kind" | "month" | "day" | "year" | "remindBeforeDays"
+>;
+
+export type SpecialDatePatch = Partial<Pick<SpecialDate, "title" | "kind" | "month" | "day">> & {
+  /** `null` clears the year; `undefined` leaves it untouched. */
+  year?: number | null | undefined;
+  remindBeforeDays?: number | null | undefined;
+};

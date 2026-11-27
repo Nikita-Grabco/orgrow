@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 import { toISODate } from "@/lib/dates";
 import { roundValue } from "@/lib/habits";
+import { applySpecialDatePatch } from "@/lib/special-dates";
 import { applyActivityPatch, applyNotePatch, applyTaskPatch, createId } from "@/lib/planner";
 import { habitLogId } from "@/services/habits-repository";
 import {
@@ -27,9 +28,12 @@ import type {
   NewActivityInput,
   NewHabitInput,
   NewNoteInput,
+  NewSpecialDateInput,
   NewTaskInput,
   Note,
   NotePatch,
+  SpecialDate,
+  SpecialDatePatch,
   Task,
   TaskPatch,
 } from "@/types/planner";
@@ -53,6 +57,12 @@ interface ActivityDialogState {
   date: string | null;
 }
 
+interface SpecialDateDialogState {
+  open: boolean;
+  mode: "create" | "edit";
+  specialDateId: string | null;
+}
+
 interface HabitDialogState {
   open: boolean;
   mode: "create" | "edit";
@@ -64,6 +74,7 @@ interface PlannerContextValue {
   habits: Habit[];
   habitLogs: HabitLog[];
   activities: Activity[];
+  specialDates: SpecialDate[];
   notes: Note[];
   /** False until saved data has been hydrated from the browser. */
   isReady: boolean;
@@ -78,6 +89,10 @@ interface PlannerContextValue {
   addActivity: (input: NewActivityInput) => void;
   editActivity: (id: string, patch: ActivityPatch) => void;
   deleteActivity: (id: string) => void;
+
+  addSpecialDate: (input: NewSpecialDateInput) => void;
+  editSpecialDate: (id: string, patch: SpecialDatePatch) => void;
+  deleteSpecialDate: (id: string) => void;
 
   addHabit: (input: NewHabitInput) => void;
   editHabit: (id: string, patch: HabitPatch) => void;
@@ -104,6 +119,11 @@ interface PlannerContextValue {
   openEditActivity: (id: string) => void;
   setActivityDialogOpen: (open: boolean) => void;
 
+  specialDateDialog: SpecialDateDialogState;
+  openAddSpecialDate: () => void;
+  openEditSpecialDate: (id: string) => void;
+  setSpecialDateDialogOpen: (open: boolean) => void;
+
   habitDialog: HabitDialogState;
   openAddHabit: () => void;
   openEditHabit: (id: string) => void;
@@ -124,6 +144,12 @@ const CLOSED_ACTIVITY_DIALOG: ActivityDialogState = {
   mode: "create",
   activityId: null,
   date: null,
+};
+
+const CLOSED_SPECIAL_DATE_DIALOG: SpecialDateDialogState = {
+  open: false,
+  mode: "create",
+  specialDateId: null,
 };
 
 const CLOSED_HABIT_DIALOG: HabitDialogState = { open: false, mode: "create", habitId: null };
@@ -154,6 +180,7 @@ export function PlannerProvider({
     activities: activitiesRepo,
     habits: habitsRepo,
     habitLogs: habitLogsRepo,
+    specialDates: specialDatesRepo,
   } = repos;
 
   // La función cambia en cada render del padre; la última es la que vale al cargar.
@@ -167,9 +194,13 @@ export function PlannerProvider({
   const [activities, setActivities] = useState<Activity[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
+  const [specialDates, setSpecialDates] = useState<SpecialDate[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [taskDialog, setTaskDialog] = useState<TaskDialogState>(CLOSED_TASK_DIALOG);
   const [activityDialog, setActivityDialog] = useState<ActivityDialogState>(CLOSED_ACTIVITY_DIALOG);
+  const [specialDateDialog, setSpecialDateDialog] = useState<SpecialDateDialogState>(
+    CLOSED_SPECIAL_DATE_DIALOG,
+  );
   const [habitDialog, setHabitDialog] = useState<HabitDialogState>(CLOSED_HABIT_DIALOG);
 
   const loadAll = useCallback(
@@ -180,17 +211,24 @@ export function PlannerProvider({
         activitiesRepo.list(),
         habitsRepo.list(),
         habitLogsRepo.list(),
+        // Las fechas importantes son un extra: si su tabla aún no existe en el servidor
+        // (docs/supabase-special-dates.sql), el resto de la app debe cargar igual.
+        specialDatesRepo.list().catch((error: unknown) => {
+          console.error("[orgrow] No se pudieron cargar las fechas importantes", error);
+          return [] as SpecialDate[];
+        }),
       ]),
-    [tasksRepo, notesRepo, activitiesRepo, habitsRepo, habitLogsRepo],
+    [tasksRepo, notesRepo, activitiesRepo, habitsRepo, habitLogsRepo, specialDatesRepo],
   );
 
   const reload = useCallback(async () => {
-    const [nextTasks, nextNotes, nextActivities, nextHabits, nextLogs] = await loadAll();
+    const [nextTasks, nextNotes, nextActivities, nextHabits, nextLogs, nextDates] = await loadAll();
     setTasks(nextTasks);
     setNotes(nextNotes);
     setActivities(nextActivities);
     setHabits(nextHabits);
     setHabitLogs(nextLogs);
+    setSpecialDates(nextDates);
   }, [loadAll]);
 
   useEffect(() => {
@@ -207,13 +245,14 @@ export function PlannerProvider({
 
     prepare()
       .then(loadAll)
-      .then(([nextTasks, nextNotes, nextActivities, nextHabits, nextLogs]) => {
+      .then(([nextTasks, nextNotes, nextActivities, nextHabits, nextLogs, nextDates]) => {
         if (!active) return;
         setTasks(nextTasks);
         setNotes(nextNotes);
         setActivities(nextActivities);
         setHabits(nextHabits);
         setHabitLogs(nextLogs);
+        setSpecialDates(nextDates);
       })
       .catch((error: unknown) => {
         console.error("[orgrow] No se pudieron cargar los datos", error);
@@ -365,6 +404,41 @@ export function PlannerProvider({
         .catch((error) => reportPersistError("No se pudo eliminar la actividad", error));
     },
     [activitiesRepo, reportPersistError],
+  );
+
+  const addSpecialDate = useCallback(
+    (input: NewSpecialDateInput) => {
+      const now = Date.now();
+      const date: SpecialDate = { ...input, id: createId("d"), createdAt: now, updatedAt: now };
+      setSpecialDates((prev) => [...prev, date]);
+      void specialDatesRepo
+        .create(date)
+        .catch((error: unknown) => reportPersistError("No se pudo guardar la fecha", error));
+    },
+    [specialDatesRepo, reportPersistError],
+  );
+
+  const editSpecialDate = useCallback(
+    (id: string, patch: SpecialDatePatch) => {
+      const current = specialDates.find((item) => item.id === id);
+      if (!current) return;
+      const updated = applySpecialDatePatch(current, patch);
+      setSpecialDates((prev) => prev.map((item) => (item.id === id ? updated : item)));
+      void specialDatesRepo
+        .update(updated)
+        .catch((error: unknown) => reportPersistError("No se pudo guardar la fecha", error));
+    },
+    [specialDates, specialDatesRepo, reportPersistError],
+  );
+
+  const deleteSpecialDate = useCallback(
+    (id: string) => {
+      setSpecialDates((prev) => prev.filter((item) => item.id !== id));
+      void specialDatesRepo
+        .remove(id)
+        .catch((error: unknown) => reportPersistError("No se pudo eliminar la fecha", error));
+    },
+    [specialDatesRepo, reportPersistError],
   );
 
   const addHabit = useCallback(
@@ -535,6 +609,18 @@ export function PlannerProvider({
     setActivityDialog((prev) => ({ ...prev, open }));
   }, []);
 
+  const openAddSpecialDate = useCallback(() => {
+    setSpecialDateDialog({ open: true, mode: "create", specialDateId: null });
+  }, []);
+
+  const openEditSpecialDate = useCallback((id: string) => {
+    setSpecialDateDialog({ open: true, mode: "edit", specialDateId: id });
+  }, []);
+
+  const setSpecialDateDialogOpen = useCallback((open: boolean) => {
+    setSpecialDateDialog((prev) => ({ ...prev, open }));
+  }, []);
+
   const openAddHabit = useCallback(() => {
     setHabitDialog({ open: true, mode: "create", habitId: null });
   }, []);
@@ -551,6 +637,7 @@ export function PlannerProvider({
     () => ({
       tasks,
       activities,
+      specialDates,
       notes,
       habits,
       habitLogs,
@@ -563,6 +650,9 @@ export function PlannerProvider({
       addActivity,
       editActivity,
       deleteActivity,
+      addSpecialDate,
+      editSpecialDate,
+      deleteSpecialDate,
       addHabit,
       editHabit,
       deleteHabit,
@@ -580,6 +670,10 @@ export function PlannerProvider({
       openAddActivity,
       openEditActivity,
       setActivityDialogOpen,
+      specialDateDialog,
+      openAddSpecialDate,
+      openEditSpecialDate,
+      setSpecialDateDialogOpen,
       habitDialog,
       openAddHabit,
       openEditHabit,
@@ -588,6 +682,7 @@ export function PlannerProvider({
     [
       tasks,
       activities,
+      specialDates,
       notes,
       habits,
       habitLogs,
@@ -600,6 +695,9 @@ export function PlannerProvider({
       addActivity,
       editActivity,
       deleteActivity,
+      addSpecialDate,
+      editSpecialDate,
+      deleteSpecialDate,
       addHabit,
       editHabit,
       deleteHabit,
@@ -617,6 +715,10 @@ export function PlannerProvider({
       openAddActivity,
       openEditActivity,
       setActivityDialogOpen,
+      specialDateDialog,
+      openAddSpecialDate,
+      openEditSpecialDate,
+      setSpecialDateDialogOpen,
       habitDialog,
       openAddHabit,
       openEditHabit,

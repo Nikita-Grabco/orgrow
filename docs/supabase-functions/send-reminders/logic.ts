@@ -111,3 +111,97 @@ export function safeEqual(a: string, b: string): boolean {
   }
   return diff === 0;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Fechas importantes (cumpleaños, aniversarios): se repiten cada año          */
+/* -------------------------------------------------------------------------- */
+
+/** Hora local a partir de la cual se envía el aviso de una fecha importante. */
+export const SPECIAL_REMINDER_HOUR = 9;
+
+export interface SpecialDateDueRow {
+  id: string;
+  user_id: string;
+  title: string;
+  kind: "cumpleanos" | "aniversario" | "otra";
+  month: number;
+  day: number;
+  year: number | null;
+  remind_before_days: number;
+  /** "YYYY-MM-DD" del último día en que ya se avisó. */
+  last_reminded_on: string | null;
+}
+
+const pad2 = (value: number) => String(value).padStart(2, "0");
+
+const isLeap = (year: number) => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+
+/** Día y hora locales de un instante en una zona IANA; si la zona no vale, usa UTC. */
+export function localParts(now: Date, timeZone: string): { date: string; hour: number } {
+  const read = (zone: string) => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: zone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(now);
+    const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+    return { date: `${get("year")}-${get("month")}-${get("day")}`, hour: Number(get("hour")) };
+  };
+  try {
+    return read(timeZone);
+  } catch {
+    return read("UTC");
+  }
+}
+
+/** "YYYY-MM-DD" más `days` días. */
+export function addDaysISO(iso: string, days: number): string {
+  const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
+  const date = new Date(Date.UTC(y, m - 1, d + days));
+  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}`;
+}
+
+/** Fecha en que cae en `year`; el 29 de febrero cae el 28 en los años no bisiestos. */
+export function occurrenceISO(row: Pick<SpecialDateDueRow, "month" | "day">, year: number): string {
+  const day = row.month === 2 && row.day === 29 && !isLeap(year) ? 28 : row.day;
+  return `${String(year).padStart(4, "0")}-${pad2(row.month)}-${pad2(day)}`;
+}
+
+/**
+ * ¿Toca avisar ahora? Sí si hoy (en la zona del usuario) es el día del aviso,
+ * ya son las 9:00 o más y no se avisó ya hoy.
+ */
+export function isSpecialDateDue(row: SpecialDateDueRow, todayISO: string, hour: number): boolean {
+  if (hour < SPECIAL_REMINDER_HOUR) return false;
+  if (row.last_reminded_on === todayISO) return false;
+  const target = addDaysISO(todayISO, row.remind_before_days);
+  return occurrenceISO(row, Number(target.slice(0, 4))) === target;
+}
+
+export function buildSpecialDatePayload(row: SpecialDateDueRow, todayISO: string): PushPayload {
+  const target = addDaysISO(todayISO, row.remind_before_days);
+  const years = row.year === null ? null : Number(target.slice(0, 4)) - row.year;
+  const when =
+    row.remind_before_days === 0
+      ? "Hoy"
+      : row.remind_before_days === 1
+        ? "Mañana"
+        : `En ${row.remind_before_days} días`;
+
+  let detail = "";
+  if (years !== null && years > 0) {
+    detail = row.kind === "cumpleanos" ? ` · cumple ${years}` : ` · ${years} años`;
+  }
+  const label =
+    row.kind === "cumpleanos" ? "Cumpleaños" : row.kind === "aniversario" ? "Aniversario" : "Fecha";
+
+  return {
+    title: row.title,
+    body: `${when} · ${label}${detail}`,
+    url: "/agenda",
+    tag: `special-date-${row.id}`,
+  };
+}

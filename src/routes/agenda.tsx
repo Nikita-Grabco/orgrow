@@ -7,6 +7,7 @@ import { DayView } from "@/components/agenda/day-view";
 import { MonthView } from "@/components/agenda/month-view";
 import { WeekView } from "@/components/agenda/week-view";
 import { PageHeader } from "@/components/common/page-header";
+import { SpecialDatesCard } from "@/components/special-dates/special-dates-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSwipeNav } from "@/hooks/use-swipe-nav";
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/agenda")({
 });
 
 function AgendaPage() {
-  const { activities, tasks, isReady, openAddActivity, openAddTask } = usePlanner();
+  const { activities, tasks, specialDates, isReady, openAddActivity, openAddTask } = usePlanner();
   const today = useToday();
   const todayISO = today ? toISODate(today) : null;
 
@@ -136,12 +137,15 @@ function AgendaPage() {
           <MonthView
             anchorISO={anchorISO}
             activities={activities}
+            specialDates={specialDates}
             tasks={tasks}
             todayISO={todayISO}
             onSelectDay={selectDay}
           />
         )}
       </div>
+
+      <SpecialDatesCard variant="agenda" />
     </div>
   );
 }

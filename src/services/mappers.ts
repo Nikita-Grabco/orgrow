@@ -26,11 +26,15 @@ import type {
   NewActivityInput,
   NewHabitInput,
   NewNoteInput,
+  NewSpecialDateInput,
   NewTaskInput,
   Note,
   NoteKind,
   NotePatch,
   Priority,
+  SpecialDate,
+  SpecialDateKind,
+  SpecialDatePatch,
   Task,
   TaskPatch,
 } from "@/types/planner";
@@ -102,6 +106,18 @@ export interface HabitLogRow {
   habit_id: string;
   log_date: string;
   value: number | string;
+}
+
+export interface SpecialDateRow {
+  id: string;
+  title: string;
+  kind: SpecialDateKind;
+  month: number;
+  day: number;
+  year: number | null;
+  remind_before_days: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 /** Perfil tal como lo usa la app. */
@@ -358,4 +374,46 @@ export function habitLogFromRow(row: HabitLogRow): HabitLog {
 
 export function habitLogToUpsert(log: Pick<HabitLog, "habitId" | "date" | "value">, id?: string) {
   return defined({ id, habit_id: log.habitId, log_date: log.date, value: log.value });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Fechas importantes                                                         */
+/* -------------------------------------------------------------------------- */
+
+export function specialDateFromRow(row: SpecialDateRow): SpecialDate {
+  return {
+    id: row.id,
+    title: row.title,
+    kind: row.kind,
+    month: row.month,
+    day: row.day,
+    year: row.year ?? undefined,
+    remindBeforeDays: row.remind_before_days,
+    createdAt: millisFromDb(row.created_at),
+    updatedAt: millisFromDb(row.updated_at),
+  };
+}
+
+export function specialDateToInsert(input: NewSpecialDateInput, id?: string) {
+  return defined({
+    id,
+    title: input.title,
+    kind: input.kind,
+    month: input.month,
+    day: input.day,
+    year: input.year ?? null,
+    remind_before_days: input.remindBeforeDays ?? null,
+  });
+}
+
+export function specialDateToUpdate(patch: SpecialDatePatch) {
+  return defined({
+    title: patch.title,
+    kind: patch.kind,
+    month: patch.month,
+    day: patch.day,
+    // `null` limpia el valor opcional; `undefined` no lo toca.
+    year: patch.year,
+    remind_before_days: patch.remindBeforeDays,
+  });
 }

@@ -24,6 +24,9 @@ import {
   noteFromRow,
   noteToInsert,
   noteToUpdate,
+  specialDateFromRow,
+  specialDateToInsert,
+  specialDateToUpdate,
   taskFromRow,
   taskToInsert,
   taskToUpdate,
@@ -31,19 +34,25 @@ import {
   type HabitLogRow,
   type HabitRow,
   type NoteRow,
+  type SpecialDateRow,
   type TaskRow,
 } from "@/services/mappers";
+import {
+  createLocalSpecialDatesRepository,
+  type SpecialDatesRepository,
+} from "@/services/special-dates-repository";
 import { createLocalNotesRepository, type NotesRepository } from "@/services/notes-repository";
 import { createLocalTasksRepository, type TasksRepository } from "@/services/tasks-repository";
-import type { Activity, Habit, HabitLog, Note, Task } from "@/types/planner";
+import type { Activity, Habit, HabitLog, Note, SpecialDate, Task } from "@/types/planner";
 
-/** Los cinco repositorios que necesita el store, sea cual sea el almacenamiento. */
+/** Los repositorios que necesita el store, sea cual sea el almacenamiento. */
 export interface PlannerRepositories {
   tasks: TasksRepository;
   notes: NotesRepository;
   activities: ActivitiesRepository;
   habits: HabitsRepository;
   habitLogs: HabitLogsRepository;
+  specialDates: SpecialDatesRepository;
 }
 
 export function createLocalPlannerRepositories(): PlannerRepositories {
@@ -53,6 +62,7 @@ export function createLocalPlannerRepositories(): PlannerRepositories {
     activities: createLocalActivitiesRepository(),
     habits: createLocalHabitsRepository(),
     habitLogs: createLocalHabitLogsRepository(),
+    specialDates: createLocalSpecialDatesRepository(),
   };
 }
 
@@ -322,6 +332,53 @@ export function createSupabaseHabitLogsRepository(client: SupabaseClient): Habit
   };
 }
 
+export function createSupabaseSpecialDatesRepository(
+  client: SupabaseClient,
+): SpecialDatesRepository {
+  return {
+    async list() {
+      const rows = await fetchAll<SpecialDateRow>(client, "special_dates", [
+        { column: "month", ascending: true },
+        { column: "day", ascending: true },
+      ]);
+      return rows.map(specialDateFromRow);
+    },
+
+    async create(date) {
+      const { data, error } = await client
+        .from("special_dates")
+        .insert(specialDateToInsert(date, date.id))
+        .select()
+        .single<SpecialDateRow>();
+      if (error) fail(error);
+      return specialDateFromRow(data);
+    },
+
+    async update(date) {
+      const { data, error } = await client
+        .from("special_dates")
+        .update(
+          specialDateToUpdate({
+            title: date.title,
+            kind: date.kind,
+            month: date.month,
+            day: date.day,
+            year: date.year ?? null,
+            remindBeforeDays: date.remindBeforeDays ?? null,
+          }),
+        )
+        .eq("id", date.id)
+        .select()
+        .maybeSingle<SpecialDateRow>();
+      if (error) fail(error);
+      if (!data) throw new Error(`No existe la fecha "${date.id}"`);
+      return specialDateFromRow(data);
+    },
+
+    remove: (id) => removeById(client, "special_dates", id),
+  };
+}
+
 export function createSupabasePlannerRepositories(client: SupabaseClient): PlannerRepositories {
   return {
     tasks: createSupabaseTasksRepository(client),
@@ -329,6 +386,7 @@ export function createSupabasePlannerRepositories(client: SupabaseClient): Plann
     activities: createSupabaseActivitiesRepository(client),
     habits: createSupabaseHabitsRepository(client),
     habitLogs: createSupabaseHabitLogsRepository(client),
+    specialDates: createSupabaseSpecialDatesRepository(client),
   };
 }
 
@@ -342,6 +400,8 @@ export interface ImportPayload {
   activities: Activity[];
   habits: Habit[];
   habitLogs: HabitLog[];
+  /** Opcional: las copias antiguas no las traen. */
+  specialDates?: SpecialDate[];
 }
 
 /**
@@ -395,6 +455,15 @@ export async function importPlannerData(
       ...habitToInsert(habit, habit.id),
       archived: habit.archived,
       created_at: millisToDb(habit.createdAt),
+    })),
+    "id",
+  );
+
+  await upsert(
+    "special_dates",
+    (data.specialDates ?? []).map((date) => ({
+      ...specialDateToInsert(date, date.id),
+      created_at: millisToDb(date.createdAt),
     })),
     "id",
   );

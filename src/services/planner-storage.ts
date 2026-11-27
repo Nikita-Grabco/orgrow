@@ -14,6 +14,7 @@ export const STORAGE_KEYS = {
   activities: "orgadia:v1:activities",
   habits: "orgrow:v1:habits",
   habitLogs: "orgrow:v1:habit-logs",
+  specialDates: "orgrow:v1:special-dates",
 } as const;
 
 export interface StoredCollection<T> {

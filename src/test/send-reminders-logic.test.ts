@@ -5,11 +5,16 @@ import { generateVapidKeys } from "../../scripts/vapid.mjs";
 import {
   BATCH_LIMIT,
   MAX_LATE_MS,
+  addDaysISO,
   buildPayload,
+  buildSpecialDatePayload,
   classifyPushFailure,
   dueWindow,
   groupByUser,
+  isSpecialDateDue,
+  localParts,
   safeEqual,
+  type SpecialDateDueRow,
   whenText,
 } from "../../docs/supabase-functions/send-reminders/logic.ts";
 
@@ -140,5 +145,65 @@ describe("generador de claves VAPID", () => {
 
   it("cada ejecución genera un par distinto", () => {
     expect(generateVapidKeys().publicKey).not.toBe(generateVapidKeys().publicKey);
+  });
+});
+
+describe("fechas importantes", () => {
+  const base: SpecialDateDueRow = {
+    id: "d1",
+    user_id: "u1",
+    title: "Ana",
+    kind: "cumpleanos",
+    month: 12,
+    day: 5,
+    year: 1990,
+    remind_before_days: 1,
+    last_reminded_on: null,
+  };
+
+  it("avisa el día anterior, a partir de las 9:00, una sola vez", () => {
+    expect(isSpecialDateDue(base, "2026-12-04", 9)).toBe(true);
+    expect(isSpecialDateDue(base, "2026-12-04", 8)).toBe(false);
+    expect(isSpecialDateDue(base, "2026-12-03", 12)).toBe(false);
+    expect(isSpecialDateDue(base, "2026-12-05", 12)).toBe(false);
+    expect(isSpecialDateDue({ ...base, last_reminded_on: "2026-12-04" }, "2026-12-04", 12)).toBe(
+      false,
+    );
+  });
+
+  it("avisa el mismo día con 0 días y cruza el fin de año", () => {
+    expect(isSpecialDateDue({ ...base, remind_before_days: 0 }, "2026-12-05", 10)).toBe(true);
+    const newYear = { ...base, month: 1, day: 2, remind_before_days: 7 };
+    expect(isSpecialDateDue(newYear, "2026-12-26", 10)).toBe(true);
+  });
+
+  it("trata el 29 de febrero como 28 en años no bisiestos", () => {
+    const leapDay = { ...base, month: 2, day: 29, remind_before_days: 0 };
+    expect(isSpecialDateDue(leapDay, "2027-02-28", 10)).toBe(true);
+    expect(isSpecialDateDue(leapDay, "2028-02-29", 10)).toBe(true);
+    expect(isSpecialDateDue(leapDay, "2028-02-28", 10)).toBe(false);
+  });
+
+  it("calcula el día y la hora locales de una zona", () => {
+    const instant = new Date("2026-12-04T23:30:00Z");
+    expect(localParts(instant, "Europe/Madrid")).toEqual({ date: "2026-12-05", hour: 0 });
+    expect(localParts(instant, "America/Mexico_City")).toEqual({ date: "2026-12-04", hour: 17 });
+    expect(localParts(instant, "Zona/Invalida").date).toBe("2026-12-04");
+    expect(addDaysISO("2026-12-31", 1)).toBe("2027-01-01");
+  });
+
+  it("redacta el aviso con la edad", () => {
+    expect(buildSpecialDatePayload(base, "2026-12-04")).toEqual({
+      title: "Ana",
+      body: "Mañana · Cumpleaños · cumple 36",
+      url: "/agenda",
+      tag: "special-date-d1",
+    });
+    expect(
+      buildSpecialDatePayload(
+        { ...base, year: null, kind: "aniversario", remind_before_days: 0 },
+        "2026-12-05",
+      ).body,
+    ).toBe("Hoy · Aniversario");
   });
 });

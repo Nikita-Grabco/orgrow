@@ -1,19 +1,30 @@
+import { Gift } from "lucide-react";
+
 import { CATEGORIES } from "@/config/categories";
 import { dayOfMonth, isSameMonthISO, monthGridISO, WEEKDAY_INITIALS } from "@/lib/dates";
 import { getActivitiesOn } from "@/lib/planner";
+import { specialDatesOn } from "@/lib/special-dates";
 import { cn } from "@/lib/utils";
-import type { Activity, Task } from "@/types/planner";
+import type { Activity, SpecialDate, Task } from "@/types/planner";
 
 interface MonthViewProps {
   anchorISO: string;
   activities: Activity[];
+  specialDates: SpecialDate[];
   tasks: Task[];
   todayISO: string | null;
   onSelectDay: (dateISO: string) => void;
 }
 
 /** Full month grid. Clicking a day opens it in the day view. */
-export function MonthView({ anchorISO, activities, tasks, todayISO, onSelectDay }: MonthViewProps) {
+export function MonthView({
+  anchorISO,
+  activities,
+  specialDates,
+  tasks,
+  todayISO,
+  onSelectDay,
+}: MonthViewProps) {
   const dates = monthGridISO(anchorISO);
 
   return (
@@ -32,6 +43,7 @@ export function MonthView({ anchorISO, activities, tasks, todayISO, onSelectDay 
       <div className="grid grid-cols-7 gap-1">
         {dates.map((dateISO) => {
           const dayActivities = getActivitiesOn(activities, dateISO);
+          const daySpecial = specialDatesOn(specialDates, dateISO);
           const pendingTasks = tasks.filter(
             (task) => task.dueDate === dateISO && !task.completed,
           ).length;
@@ -60,6 +72,7 @@ export function MonthView({ anchorISO, activities, tasks, todayISO, onSelectDay 
               </span>
 
               <div className="flex flex-wrap gap-0.5">
+                {daySpecial.length > 0 && <span className="size-1.5 rounded-full bg-primary" />}
                 {dayActivities.slice(0, 4).map((activity) => (
                   <span
                     key={activity.id}
@@ -69,6 +82,15 @@ export function MonthView({ anchorISO, activities, tasks, todayISO, onSelectDay 
               </div>
 
               <div className="mt-auto flex flex-col gap-0.5">
+                {daySpecial.slice(0, 1).map((item) => (
+                  <span
+                    key={item.id}
+                    className="hidden items-center gap-0.5 truncate text-[10px] font-semibold text-primary sm:flex"
+                  >
+                    <Gift className="size-2.5 shrink-0" />
+                    <span className="truncate">{item.title}</span>
+                  </span>
+                ))}
                 {dayActivities.slice(0, 1).map((activity) => (
                   <span
                     key={activity.id}

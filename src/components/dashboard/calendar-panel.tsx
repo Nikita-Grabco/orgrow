@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Gift } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { useSwipeNav } from "@/hooks/use-swipe-nav";
@@ -21,6 +21,7 @@ import {
   toISODate,
   WEEKDAY_INITIALS,
 } from "@/lib/dates";
+import { specialDatesOn } from "@/lib/special-dates";
 import { getActivitiesOn, getUpcomingActivities, groupActivitiesByDate } from "@/lib/planner";
 import { cn } from "@/lib/utils";
 import { usePlanner } from "@/store/planner-store";
@@ -29,7 +30,7 @@ const MAX_CHIPS = 2;
 
 /** Month calendar with its events, plus the agenda of the selected day beside it. */
 export function CalendarPanel() {
-  const { activities, tasks } = usePlanner();
+  const { activities, tasks, specialDates, openEditSpecialDate } = usePlanner();
   const today = useToday();
   const todayISO = today ? toISODate(today) : null;
   const nowTime = today ? currentTimeString(today) : null;
@@ -53,6 +54,7 @@ export function CalendarPanel() {
   });
 
   const selectedActivities = getActivitiesOn(activities, selected);
+  const selectedSpecial = specialDatesOn(specialDates, selected);
   const isTodaySelected = selected !== null && selected === todayISO;
   // On today, also show what comes next so the panel answers "what's coming up".
   const followingGroups = isTodaySelected
@@ -112,13 +114,15 @@ export function CalendarPanel() {
         <div className="grid grid-cols-7 gap-1">
           {dates.map((dateISO) => {
             const dayActivities = getActivitiesOn(activities, dateISO);
+            const daySpecial = specialDatesOn(specialDates, dateISO);
             const pendingTasks = tasks.filter(
               (task) => task.dueDate === dateISO && !task.completed,
             ).length;
             const inMonth = anchor !== null && isSameMonthISO(dateISO, anchor);
             const isToday = dateISO === todayISO;
             const isSelected = dateISO === selected;
-            const extra = dayActivities.length - MAX_CHIPS;
+            const activityChips = Math.max(0, MAX_CHIPS - daySpecial.length);
+            const extra = Math.max(0, daySpecial.length + dayActivities.length - MAX_CHIPS);
 
             return (
               <button
@@ -144,6 +148,7 @@ export function CalendarPanel() {
                 </span>
 
                 <div className="flex flex-wrap gap-0.5 sm:hidden">
+                  {daySpecial.length > 0 && <span className="size-1.5 rounded-full bg-primary" />}
                   {dayActivities.slice(0, 4).map((activity) => (
                     <span
                       key={activity.id}
@@ -153,7 +158,16 @@ export function CalendarPanel() {
                 </div>
 
                 <div className="hidden min-w-0 flex-col gap-0.5 sm:flex">
-                  {dayActivities.slice(0, MAX_CHIPS).map((activity) => {
+                  {daySpecial.slice(0, MAX_CHIPS).map((item) => (
+                    <span
+                      key={item.id}
+                      className="flex items-center gap-0.5 truncate rounded bg-primary-soft px-1 text-[10px] font-semibold leading-4 text-primary"
+                    >
+                      <Gift className="size-2.5 shrink-0" />
+                      <span className="truncate">{item.title}</span>
+                    </span>
+                  ))}
+                  {dayActivities.slice(0, activityChips).map((activity) => {
                     const category = CATEGORIES[activity.category];
                     return (
                       <span
@@ -173,7 +187,7 @@ export function CalendarPanel() {
                       +{extra} más
                     </span>
                   )}
-                  {pendingTasks > 0 && dayActivities.length === 0 && (
+                  {pendingTasks > 0 && dayActivities.length === 0 && daySpecial.length === 0 && (
                     <span className="px-1 text-[10px] text-muted-foreground">
                       {pendingTasks} tarea{pendingTasks === 1 ? "" : "s"}
                     </span>
@@ -202,6 +216,23 @@ export function CalendarPanel() {
             Agenda <ArrowRight className="size-3" />
           </Link>
         </div>
+
+        {selectedSpecial.length > 0 && (
+          <ul className="mb-5 space-y-1.5">
+            {selectedSpecial.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => openEditSpecialDate(item.id)}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-xl bg-primary-soft px-3 py-2 text-left text-sm font-semibold text-primary"
+                >
+                  <Gift className="size-4 shrink-0" />
+                  <span className="truncate">{item.title}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {selectedActivities.length === 0 && followingGroups.length === 0 ? (
           <p className="text-sm text-muted-foreground">

@@ -1,4 +1,4 @@
-import { CalendarClock, ListChecks } from "lucide-react";
+import { CalendarClock, Gift, ListChecks } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import {
@@ -18,7 +18,7 @@ interface AddMenuProps {
 
 /** "¿Qué quieres añadir?": pregunta si es una tarea o una actividad antes de abrir su formulario. */
 export function AddMenu({ children }: AddMenuProps) {
-  const { openAddTask, openAddActivity } = usePlanner();
+  const { openAddTask, openAddActivity, openAddSpecialDate } = usePlanner();
   const [open, setOpen] = useState(false);
 
   const choose = (open: () => void) => {
@@ -33,7 +33,7 @@ export function AddMenu({ children }: AddMenuProps) {
         <SheetHeader className="text-left">
           <SheetTitle>¿Qué quieres añadir?</SheetTitle>
           <SheetDescription className="sr-only">
-            Elige si es una tarea o una actividad.
+            Elige si es una tarea, una actividad o una fecha importante.
           </SheetDescription>
         </SheetHeader>
         <div className="mt-4 grid gap-2">
@@ -48,6 +48,12 @@ export function AddMenu({ children }: AddMenuProps) {
             title="Actividad"
             hint="Un evento con hora de inicio y fin, o lugar"
             onClick={() => choose(() => openAddActivity())}
+          />
+          <ChoiceButton
+            icon={<Gift className="size-5" />}
+            title="Fecha importante"
+            hint="Cumpleaños o aniversario que se repite cada año"
+            onClick={() => choose(() => openAddSpecialDate())}
           />
         </div>
       </SheetContent>

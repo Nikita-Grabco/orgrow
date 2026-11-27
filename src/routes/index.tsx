@@ -4,6 +4,7 @@ import { CalendarPanel } from "@/components/dashboard/calendar-panel";
 import { GreetingHeader } from "@/components/dashboard/greeting-header";
 import { NextUpCard } from "@/components/dashboard/next-up-card";
 import { OverdueTasks } from "@/components/dashboard/overdue-tasks";
+import { SpecialDatesCard } from "@/components/special-dates/special-dates-card";
 import { TodayHabits } from "@/components/dashboard/today-habits";
 import { TodayTasks } from "@/components/dashboard/today-tasks";
 import { InstallCard } from "@/components/pwa/install-card";
@@ -47,6 +48,7 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-1 gap-4 sm:gap-6">
           <NextUpCard />
+          <SpecialDatesCard variant="dashboard" />
           <TodayHabits />
           <OverdueTasks />
         </div>

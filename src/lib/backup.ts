@@ -1,5 +1,7 @@
 import { CATEGORY_IDS, NOTE_KIND_IDS, PRIORITY_IDS } from "@/config/categories";
+import { SPECIAL_DATE_KIND_IDS } from "@/config/special-dates";
 import { isValidISODate } from "@/lib/dates";
+import { maxDayOfMonth } from "@/lib/special-dates";
 import { habitLogId } from "@/services/habits-repository";
 import { deterministicUuid } from "@/services/local-import";
 import type { ImportPayload } from "@/services/supabase-repositories";
@@ -13,6 +15,8 @@ import type {
   Note,
   NoteKind,
   Priority,
+  SpecialDate,
+  SpecialDateKind,
   Task,
 } from "@/types/planner";
 
@@ -175,6 +179,43 @@ function readActivity(raw: unknown, now: number): Activity | null {
   };
 }
 
+function readSpecialDate(raw: unknown, now: number): SpecialDate | null {
+  if (!isObject(raw)) return null;
+  const id = text(raw["id"], 1, 100);
+  const title = text(raw["title"], 1, 100);
+  const kind = oneOf<SpecialDateKind>(raw["kind"], SPECIAL_DATE_KIND_IDS);
+  const month = raw["month"];
+  const day = raw["day"];
+  if (!id || !title || !kind) return null;
+  if (typeof month !== "number" || !Number.isInteger(month) || month < 1 || month > 12) return null;
+  if (typeof day !== "number" || !Number.isInteger(day) || day < 1 || day > maxDayOfMonth(month)) {
+    return null;
+  }
+  const year = raw["year"];
+  const remindBeforeDays = raw["remindBeforeDays"];
+  const createdAt = millis(raw["createdAt"], now);
+
+  return {
+    id,
+    title,
+    kind,
+    month,
+    day,
+    ...(typeof year === "number" && Number.isInteger(year) && year >= 1 && year <= 9999
+      ? { year }
+      : {}),
+    remindBeforeDays:
+      typeof remindBeforeDays === "number" &&
+      Number.isInteger(remindBeforeDays) &&
+      remindBeforeDays >= 0 &&
+      remindBeforeDays <= 30
+        ? remindBeforeDays
+        : null,
+    createdAt,
+    updatedAt: millis(raw["updatedAt"], createdAt),
+  };
+}
+
 function readFrequency(raw: unknown): HabitFrequency | null {
   if (!isObject(raw)) return null;
   if (raw["type"] === "daily") return { type: "daily" };
@@ -298,6 +339,7 @@ export function parseBackup(source: string, now: number = Date.now()): BackupRes
   const activities = readList(data["activities"], (item) => readActivity(item, now));
   const habits = readList(data["habits"], (item) => readHabit(item, now));
   const logs = readList(data["habitLogs"], readLog);
+  const specialDates = readList(data["specialDates"], (item) => readSpecialDate(item, now));
 
   // Un registro de hábito sin su hábito (o repetido el mismo día) no sirve.
   const habitIds = new Set(habits.items.map((habit) => habit.id));
@@ -327,6 +369,7 @@ export function parseBackup(source: string, now: number = Date.now()): BackupRes
         activities: activities.items,
         habits: habits.items,
         habitLogs,
+        specialDates: specialDates.items,
       },
       skipped:
         tasks.skipped +
@@ -334,6 +377,7 @@ export function parseBackup(source: string, now: number = Date.now()): BackupRes
         activities.skipped +
         habits.skipped +
         logs.skipped +
+        specialDates.skipped +
         orphanLogs,
     },
   };
@@ -361,6 +405,10 @@ export function assignBackupIds(parsed: ParsedBackup, userId: string): ImportPay
     activities: parsed.payload.activities.map((activity) => ({
       ...activity,
       id: idFor("activity", activity.id),
+    })),
+    specialDates: (parsed.payload.specialDates ?? []).map((date) => ({
+      ...date,
+      id: idFor("special-date", date.id),
     })),
     habits: parsed.payload.habits.map((habit) => ({ ...habit, id: habitIds.get(habit.id)! })),
     habitLogs: parsed.payload.habitLogs.map((log) => {

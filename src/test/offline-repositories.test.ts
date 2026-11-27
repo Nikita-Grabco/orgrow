@@ -137,6 +137,12 @@ function fakeServer() {
       remove: async () => {},
       removeForHabit: async () => {},
     },
+    specialDates: {
+      list: async () => [],
+      create: async (d) => d,
+      update: async (d) => d,
+      remove: async () => {},
+    },
   };
 
   return { state, repositories };

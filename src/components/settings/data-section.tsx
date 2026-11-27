@@ -11,13 +11,13 @@ import { usePlanner } from "@/store/planner-store";
 
 export function DataSection() {
   const { user } = useAuth();
-  const { tasks, notes, activities, habits, habitLogs, reloadData } = usePlanner();
+  const { tasks, notes, activities, habits, habitLogs, specialDates, reloadData } = usePlanner();
   const fileInput = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
 
   function exportData() {
     const file = createBackup(
-      { tasks, notes, activities, habits, habitLogs },
+      { tasks, notes, activities, habits, habitLogs, specialDates },
       user?.id ?? null,
       new Date(),
     );
