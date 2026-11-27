@@ -82,7 +82,7 @@ function AccessPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <h1 className="sr-only">Acceso a Orgrow</h1>
-          <Brand link={false} surface="background" />
+          <Brand link={false} />
           <p className="text-sm text-muted-foreground">
             {isSignup
               ? "Crea tu cuenta para empezar a organizar tu día."

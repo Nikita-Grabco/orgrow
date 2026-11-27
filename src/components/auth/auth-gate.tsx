@@ -29,7 +29,7 @@ function CenteredScreen({ children }: { children: React.ReactNode }) {
 function AuthSplash() {
   return (
     <CenteredScreen>
-      <Brand link={false} surface="background" />
+      <Brand link={false} />
       <p className="animate-pulse text-sm font-medium text-muted-foreground" role="status">
         Cargando tu día…
       </p>
@@ -41,7 +41,7 @@ function AuthSplash() {
 function MissingConfiguration() {
   return (
     <CenteredScreen>
-      <Brand link={false} surface="background" />
+      <Brand link={false} />
       <div className="surface max-w-md space-y-3 p-6 text-center">
         <h1 className="font-display font-semibold text-xl text-foreground">
           Falta configurar el servidor
